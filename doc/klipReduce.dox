@@ -1,0 +1,95 @@
+/** \mainpage
+
+klipReduce performs the  Karhunen-Loeve Image Processing (KLIP) algorithm <a href="http://adsabs.harvard.edu/abs/2012ApJ...755L..28S"> (Soummer et al, 2010)</a> reduction of a set of astronomical images.  KLIP is based on principle component analysis (PCA) of a set of reference images.
+
+<h2> Pre-processing </h2>
+
+Several pre-processing steps can be peformed on the images before applying KLIP.  These are (in order):
+-# quality thresholding
+-# simulated object injection
+-# coadding (based on elapsed time and image number)
+-# radial profile subtraction
+-# azimuthal unsharp mask
+-# masking
+-# symmetric Gaussian unsharp mask (followed by another application of the mask)
+
+The pre-processed images can be written to disk for later use.  klipReduce can be called with \code --preProcess_only=true \endcode to stop after the pre-processing steps.  It can then be called again with no pre-processing to actually run KLIP on the pre-processed files (you will need to update the file dir/prefix/ext or fileList information).
+
+<h2>Configuration</h2>
+
+klipReduce is configured using mxlib's cascaded configuration system.  The cofiguration parameters are read from the following sources, in order
+-# the configuration file specified by the environment variable KLIPREDUCE_GLOBAL_CONFIG
+-# the configuration file named "klipReduce.conf" in the working directory
+-# the command line
+-# the configuration file named with the "--config" or "-c" opton on the command line
+
+These are processed in order, and the last value set overrides the pevious values.
+
+<h3>Configuration Parameters</h3>
+
+<table>
+<tr><th>Long Option</th> <th>Short Option</th> <th>Type</th> <th>Required?</th> <th>Default</th> <th>Description</th></tr>
+<tr><td>config</td> <td>c</td> <td>string</td> <td>optional</td> <td></td> <td>Local configuration file, processed last</td></tr>
+<tr><td colspan="0"><b>Basic Setup</b></td></tr>
+<tr><td>directory</td> <td>D</td> <td>string</td> <td><b>required</b>*</td> <td></td> <td>Directory to search for files</td></tr>
+<tr><td>prefix</td>   <td>P</td>  <td>string</td> <td><b>required</b>*</td> <td></td>   <td>Prefix of the files (e.g. 'V47')</td></tr>
+<tr><td>extension</td><td>E</td>  <td>string</td> <td>optional*</td> <td>.fits</td>  <td>Extension of the files</td></tr>
+<tr><td>fileList</td> <td>F</td>  <td>string</td> <td><b>required</b>*</td> <td></td> <td>File containing the list of files (single column '\\n' delimited)</td></tr> 
+<tr><td /><td /><td /><td colspan="3"> *Note: <b>either</b> directory+prefix [+extension] <b>or</b> fileList must be provided.  fileList takes precedence</td></tr>
+<tr><td colspan="0"><b>File Reading</b></td></tr>
+<tr><td>deleteFront</td>      <td></td>  <td>int</td>    <td>optional</td> <td>0</td><td>number of files to delete from beginning of list</td></tr>
+<tr><td>deleteBack</td>       <td></td>  <td>int</td>    <td>optional</td> <td>0</td><td>number of files to delete from end of list</td></tr>
+<tr><td>qualityFile</td>      <td></td>  <td>string</td> <td>optional</td> <td></td><td>name of file containing quality value for each image in list, in two columns as "name qVal" pairs.</td></tr>
+<tr><td>qualityThreshold</td> <td></td>  <td>float</td>  <td>optional</td> <td>0</td><td>threshold to apply to quality values, only images with qVal > qualityThreshold are included.</td></tr>
+<tr><td>thresholdOnly</td> <td></td>  <td>bool</td>  <td>optional</td> <td>false</td><td>Only apply the threshold, then print the selected file names to stdout, and quit.</td></tr>
+<tr><td>MJDKeyword</td>       <td></td>  <td>string</td> <td>optional</td> <td>DATE-OBS</td><td>FITS header keyword for MJD of image</td></tr>
+<tr><td>MJDisISO8601</td>     <td></td>  <td>bool</td>   <td>optional</td> <td>true</td><td>specify if MJD is in ISO-8601 format</td></tr>
+<tr><td>imSize</td>           <td>S</td> <td>int</td>    <td>optional</td> <td>0</td><td>specify size of image to use, cutting from original if necessary.</td></tr>
+<tr><td colspan="0"><b>Pre-Processing: Fake Planet Injection</b></td></tr>
+<tr><td>fakeFileName</td>      <td /> <td>string</td>        <td>optional</td> <td /> <td>Name of a FITS file containing the PSF to use as the fake planet.</td> </tr>
+<tr><td>fakeScaleFileName</td> <td /> <td>string</td>        <td>optional</td> <td /> <td>File containing "filename scale" pairs in two columns, where the PSF is multiplied by scale before contrast.  For example use this to account for Strehl variation.</td> </tr>
+<tr><td>fakeSep</td>           <td /> <td>vector float </td> <td>optional</td> <td /> <td>Separation of fake planets.</td> </tr>
+<tr><td>fakePA</td>            <td /> <td>vector float </td> <td>optional</td> <td /> <td>Position angle of fake planets.</td> </tr>
+<tr><td>fakeContrast</td>      <td /> <td>vector float </td> <td>optional</td> <td /> <td>Contrast of fake planets.</td> </tr>
+<tr><td colspan="0"><b>Pre-Processing: Co-Adding</b></td></tr>
+<tr><td>coaddMethod</td>  <td /> <td>string</td> <td>optional</td>  <td>none</td> <td>The averaing method to use for coadding images.  Choices are none, mean, median.</td> </tr>
+<tr><td>coaddMaxImno</td> <td /> <td>int</td>    <td>optional</td>  <td /> <td>Maximum number of images to combine at one time.</td> </tr>
+<tr><td>coaddMaxTime</td> <td /> <td>float</td>  <td>optional</td>  <td /> <td>Maximum time, in seconds, over which to co-add images</td> </tr>
+
+<tr><td colspan="0"><b>Masking</b></td></tr>
+
+<tr><td>maskFile</td>                 <td /> <td>string</td> <td>optional</td>  <td />         <td>Name of file containing 1/0 mask.  Must be correct size (see imSize).</td> </tr>
+
+<tr><td colspan="0"><b>Pre-Processing: Pre-filtering</b></td></tr>
+<tr><td>preProcessBeforeCoadd</td>    <td /> <td>bool</td>   <td>optional</td>  <td>false</td> <td>If true, then pre-processing is done before the co-adding step.</td> </tr>
+<tr><td>preProcess_mask</td>    <td /> <td>bool</td>   <td>optional</td>  <td>false</td> <td>If true, then the mask is applied at each pre-processing step.</td> </tr>
+<tr><td>preProcess_subradprof</td>    <td /> <td>bool</td>   <td>optional</td>  <td>false</td>  <td>If true, the median radial profile is subtracted.</td> </tr>
+<tr><td>preProcess_azUSM_azW</td>     <td /> <td>float</td>  <td>optional</td>  <td>0</td>     <td>Azimuth width for boxcar azimuthal unsharp mask.</td> </tr>
+<tr><td>preProcess_azUSM_radW</td>    <td /> <td>float</td>  <td>optional</td>  <td>0</td>     <td>Radial width for boxcar azimuthal unsharp mask.</td> </tr>
+<tr><td colspan="5"/>  <td>Note:If either azUSM_azW or azUSM_radW are 0, then the azimuthal USM is not performed</td> </tr>
+<tr><td>preProcess_gaussUSM_fwhm</td> <td /> <td>float</td>  <td>optional</td>  <td>0</td>     <td>Gaussian FWHM for symmetric unsharp mask.</td> </tr>
+<tr><td colspan="5"/>  <td>Note:If gaussUSM_fwhm is 0, then the symmetric USM is not performed</td> </tr>
+<tr><td colspan="0"><b>Pre-Processing: control</b></td></tr>
+<tr><td>preProcess_outputPrefix</td>  <td /> <td>string</td>  <td>optional</td>  <td></td>     <td>Prefix (including path) for writing pre-processed images to disk.</td> </tr>
+<tr><td>preProcess_only</td>          <td />  <td>bool</td>  <td>optional</td>  <td>false</td>     <td>If this is true, then program exits after pre-processing and writing images to disk.</td> </tr>
+<tr><td>skipPreProcess</td>    <td /> <td>bool</td>  <td>optional</td>  <td>false</td>     <td>If set, then all pre-processing steps are skipped.  However, the parameters will still be written to the output FITS header.</td> </tr>
+<tr><td colspan="0"><b>KLIP Parameters</b></td></tr>
+<tr><td>mindDPx</td>       <td>m</td> <td>float</td>      <td>optional</td> <td>0</td>    <td></td> </tr>
+<tr><td>excludeMethod</td> <td>e</td> <td>string</td>     <td>optional</td> <td>none</td> <td>Method to use for image exclusion: none, pixel, angle, imno</td> </tr>
+<tr><td>includeRefNum</td> <td /> <td>int</td>        <td>optional</td> <td>0</td>    <td>Number of reference images to use in covariance matrix, chosen by correlation coefficient.  If 0, all are used.</td> </tr>
+<tr><td>Nmodes</td>        <td>n</td> <td>vector int</td> <td><b>required</b></td> <td></td>     <td>Number of modes to include in PSF.</td> </tr>
+<tr><td>minRadius</td>     <td>r</td> <td>float</td>      <td><b>required</b></td> <td></td>     <td>Minimum radius of reduced region.</td> </tr>
+<tr><td>maxRadius</td>     <td>R</td> <td>float</td>      <td><b>required</b></td> <td></td>     <td>Maximum radius of reduced region.</td> </tr>
+<tr><td colspan="0"><b>Combination and Output</b></td></tr>
+<tr><td>combineMethod</td> <td>c</td> <td>string</td> <td>optional</td>  <td>mean</td> <td>Averaging method for final combination: mean, median, weighted, sigma </td> </tr>
+<tr><td>weightsFile</td>   <td /> <td>string</td> <td>optional</td>  <td></td> <td>File containing weights for the weighted combo.  Two column format: filename weight</td> </tr>
+<tr><td>sigmaThreshold</td> <td /> <td>float</td> <td>optional</td>  <td></td> <td>Clipping threshold for sigma clipped mean combination.</td> </tr>
+<tr><td>outputFile</td>    <td>o</td> <td>string</td> <td>optional</td>  <td>finim_</td> <td>Prefix for output file name.  A 4 digit 0-padded number is appended.</td> </tr>
+<tr><td>exactFName</td>    <td>o</td> <td>bool</td> <td>optional</td>  <td>false</td> <td>Used outputFile exactly as specified, without appending a number or .fits</td> </tr>
+<tr><td>outputPSFSub</td>    <td>o</td> <td>bool</td> <td>optional</td>  <td>false</td> <td>Output the PSF subtracted images.</td> </tr>
+<tr><td>psfSubPrefix</td>    <td>o</td> <td>string</td> <td>optional</td>  <td></td> <td>Prefix of the PSF subtracted images, a sequential number and ".fits" are appended.</td> </tr>
+
+</table>
+
+
+*/
