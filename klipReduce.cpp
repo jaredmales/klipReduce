@@ -6,6 +6,7 @@
 #define MX_APP_DEFAULT_configPathGlobal_env "KLIPREDUCE_GLOBAL_CONFIG"
 #define MX_APP_DEFAULT_configPathLocal "klipReduce.conf"
 
+#include <mx/gnuPlot.hpp>
 
 #include <mx/app/application.hpp>
 
@@ -17,19 +18,11 @@
 
 /** A program to run the mxlib KLIP pipeline
   */
-
-   
-   
-   
-   
-//  * <tr><td></td> <td /> <td></td> <td></td>  <td /> <td></td> </tr>
-
-
-template<typename _floatT>
+template<typename _realT>
 class klipReduce : public mx::application
 {
 public:
-   typedef _floatT floatT;
+   typedef _realT realT;
    
 protected:
 
@@ -45,7 +38,7 @@ protected:
    int deleteFront;
    int deleteBack;
    std::string qualityFile;
-   floatT qualityThreshold;
+   realT qualityThreshold;
    bool thresholdOnly;
    
    
@@ -63,14 +56,14 @@ protected:
    std::string fakeFileName; ///<FITS file containing the fake planet PSF to inject
    std::string fakeScaleFileName; ///< One-column text file containing a scale factor for each point in time.
    
-   std::vector<floatT> fakeSep; ///< Separation(s) of the fake planet(s)
-   std::vector<floatT> fakePA; ///< Position angles(s) of the fake planet(s)
-   std::vector<floatT> fakeContrast; ///< Contrast(s) of the fake planet(s)
+   std::vector<realT> fakeSep; ///< Separation(s) of the fake planet(s)
+   std::vector<realT> fakePA; ///< Position angles(s) of the fake planet(s)
+   std::vector<realT> fakeContrast; ///< Contrast(s) of the fake planet(s)
      
    //Co-adding
    std::string coaddMethod;
    int coaddMaxImno;
-   floatT coaddMaxTime;
+   realT coaddMaxTime;
    
    //Masking
    std::string maskFile;
@@ -79,20 +72,20 @@ protected:
    bool preProcess_beforeCoadd;
    bool preProcess_mask;
    bool preProcess_subradprof;
-   floatT preProcess_azUSM_azW;
-   floatT preProcess_azUSM_radW;
-   floatT preProcess_gaussUSM_fwhm;
+   realT preProcess_azUSM_azW;
+   realT preProcess_azUSM_radW;
+   realT preProcess_gaussUSM_fwhm;
    std::string preProcess_outputPrefix;
    bool preProcess_only;
    bool skipPreProcess;
    
    //KLIP parameters
-   floatT  minDPx;
+   realT  minDPx;
    std::string excludeMethod;
    int includeRefNum;
    std::vector<int> Nmodes;
-   std::vector<floatT> minRadius;
-   std::vector<floatT> maxRadius;
+   std::vector<realT> minRadius;
+   std::vector<realT> maxRadius;
 
    
    //Combination and Output
@@ -101,18 +94,35 @@ protected:
    
    std::string combineMethod;
    std::string weightFile;
-   _floatT sigmaThreshold;
+   _realT sigmaThreshold;
    
    std::string outputFile;
    bool exactFName;
+   std::string outputDir;
    
    //Output the individual PSF subtracted images
    bool outputPSFSub;
    std::string psfSubPrefix;
    
+   //************************************//
+   // Mode of execution                  //
+   std::string mode; //Choices are basic [default] and grid [grid manages a fake planet grid]
    
-   //mx::improc::KLIPreduction<floatT, mx::improc::derotVisAO<floatT>, floatT> * obs;
-   mx::improc::KLIPreduction<floatT, mx::improc::ADIDerotator<floatT>, floatT> * obs;
+   //Executes a grid of fake planets.
+   realT gridCenterSep; ///< The separation of the grid center [pixels].
+   realT gridCenterPA; ///< The PA of the grid center [deg E of N].
+   realT gridHalfWidthRad; ///< The grid half-width in radius [pixels]
+   realT gridDeltaRad; ///< The grid spacing in radius [pixels]
+   realT gridHalfWidthPA; ///< The grid half-wdith in PA [pixels]
+   realT gridDeltaPA; ///< The grid spacing in PA [pixels]
+   std::vector<realT> gridContrasts; ///< The grid contrasts, possibly negative.
+   
+   int doGrid();
+   
+   //mx::improc::KLIPreduction<realT, mx::improc::derotVisAO<realT>, realT> * obs;
+   mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT> * obs;
+   
+   
    
 public:
    klipReduce()
@@ -158,6 +168,22 @@ public:
       exactFName = false;
    
       outputPSFSub = false;
+      
+      
+      
+      //Grid setup
+      gridCenterSep = 0; 
+      gridCenterPA = 0; 
+      gridHalfWidthRad = 0; 
+      gridDeltaRad = 0; 
+      gridHalfWidthPA = 0; 
+      gridDeltaPA = 0; 
+      
+      
+      
+      
+      
+      mode = "basic";
    }
 
    ~klipReduce()
@@ -229,10 +255,19 @@ public:
       config.add("sigmaThreshold","", "sigmaThreshold",mx::argType::Required, "", "sigmaThreshold");
       config.add("outputFile","", "outputFile",mx::argType::Required, "", "outputFile");
       config.add("exactFName","", "exactFName",mx::argType::True, "", "exactFName");
+      config.add("outputDir","", "outputDir",mx::argType::Required, "", "outputDir");
       
       config.add("outputPSFSub","", "outputPSFSub",mx::argType::True, "", "outputPSFSub");
       config.add("psfSubPrefix","", "psfSubPrefix",mx::argType::Required, "", "psfSubPrefix");
       
+      config.add("mode", "", "mode", mx::argType::Required, "", "mode");
+      config.add("gridCenterSep", "", "gridCenterSep", mx::argType::Required, "", "gridCenterSep");
+      config.add("gridCenterPA", "", "gridCenterPA", mx::argType::Required, "", "gridCenterPA");
+      config.add("gridHalfWidthRad", "", "gridHalfWidthRad", mx::argType::Required, "", "gridHalfWidthRad");
+      config.add("gridHalfWidthPA", "", "gridHalfWidthPA", mx::argType::Required, "", "gridHalfWidthPA");
+      config.add("gridDeltaRad", "", "gridDeltaRad", mx::argType::Required, "", "gridDeltaRad");
+      config.add("gridDeltaPA", "", "gridDeltaPA", mx::argType::Required, "", "gridDeltaPA");
+      config.add("gridContrasts", "", "gridContrasts", mx::argType::Required, "", "gridContrasts");
       //config.add("","", "",mx::argType::Required, "", ""));
       
    }
@@ -309,8 +344,22 @@ public:
       config(outputFile, "outputFile");
       config(exactFName, "exactFName");
       
+      config(outputDir, "outputDir");
+      
       config(outputPSFSub, "outputPSFSub");
       config(psfSubPrefix, "psfSubPrefix");
+      
+      
+      config(gridCenterSep,"gridCenterSep"); 
+      
+      config(gridCenterPA,"gridCenterPA"); 
+      config(gridHalfWidthRad,"gridHalfWidthRad"); 
+      config(gridDeltaRad,"gridDeltaRad"); 
+      config(gridHalfWidthPA,"gridHalfWidthPA"); 
+      config(gridDeltaPA,"gridDeltaPA"); 
+      config(gridContrasts, "gridContrasts");
+      
+      config(mode, "mode");
       
    }
    
@@ -338,11 +387,11 @@ public:
          
          if(fileList != "")
          {
-            obs = new mx::improc::KLIPreduction<floatT, mx::improc::ADIDerotator<floatT>, floatT>(fileList);
+            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT>(fileList);
          }
          else
          {
-            obs = new mx::improc::KLIPreduction<floatT, mx::improc::ADIDerotator<floatT>, floatT>(directory, prefix, extension);
+            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT>(directory, prefix, extension);
          } 
       }
       
@@ -492,6 +541,9 @@ public:
       
       obs->exactFinimName = exactFName;
       
+      obs->outputDir = outputDir;
+     
+      
       obs->doOutputPSFSub = outputPSFSub;
       if(psfSubPrefix != "")
       {
@@ -510,17 +562,149 @@ public:
       if(checkConfig() != 0)
       {
          printUsage();
-         exit(-1);
+         return -1;
       }
       
-      std::vector<floatT> minMaxQ(minRadius.size(), 0);
       
-      obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+      if(mode == "grid")
+      {
+         return doGrid();
+      }
       
+      else
+      {
+         std::vector<realT> minMaxQ(minRadius.size(), 0);
+         return obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+      }
       
    }
    
 };
+
+template<typename realT>
+int klipReduce<realT>::doGrid()
+{
+   if( gridCenterSep == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid center separation not set (gridCenterSep)");
+      return -1;
+   }
+   
+   if( gridCenterPA == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid center PA not set (gridCenterPA)");
+      return -1;
+   }
+   
+   if( gridHalfWidthRad == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid half-width in radius not set (gridHalfWidthRad)");
+      return -1;
+   }
+   
+   if( gridHalfWidthPA == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid half-width in PA not set (gridHalfWidthPA)");
+      return -1;
+   }
+   
+   if( gridDeltaRad == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid spacing in radius not set (gridDeltaRad)");
+      return -1;
+   }
+   
+   if( gridDeltaPA == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid spacing in PA not set (gridDeltaPA)");
+      return -1;
+   }
+   
+   if( gridContrasts.size() == 0) 
+   {
+      mxError("klipReduce", MXE_PARAMNOTSET, "Grid contrasts not set (gridContrasts)");
+      return -1;
+   }
+   
+   
+   realT x0, y0;
+   
+   x0 =  -1 * gridCenterSep * sin( mx::math::dtor(gridCenterPA) );
+   y0 = gridCenterSep * cos( mx::math::dtor(gridCenterPA) );
+   
+   int Nrad = 2 * floor(gridHalfWidthRad / gridDeltaRad) + 1;
+   int Npa = 2 * floor(gridHalfWidthPA / gridDeltaPA) + 1;
+   
+   Eigen::Array<realT, -1, -1> sep, pa;
+   
+   sep.resize(Nrad, Npa);
+   pa.resize(Nrad, Npa);
+   
+   realT xp, yp,q, x, y;
+   
+   std::vector<realT> xv, yv;
+   
+   for(int i=0; i<Nrad; ++i)
+   {
+      xp = -0.5*(Nrad - 1) + i*gridDeltaRad;
+      
+      for(int j=0; j< Npa; ++j)
+      {
+         yp = -0.5*(Npa - 1) + j*gridDeltaPA;
+         
+      
+         q = mx::math::dtor(90-gridCenterPA);
+         
+         x = (x0 + xp*cos(q) + yp*sin(q));
+         y = (y0 - xp*sin(q) + yp*cos(q));
+         
+         xv.push_back(x);
+         yv.push_back(y);
+         
+         sep(i,j) = sqrt( pow(x,2) + pow(y,2) );
+         
+         pa(i,j) = mx::math::angleMod(mx::math::rtod( atan2(y, x))  - 90.0);
+         
+         
+         for(int k =0; k< gridContrasts.size(); ++k)
+         {
+            obs->fakeSep = {sep(i,j)};
+            obs->fakePA = {pa(i,j)};
+            obs->fakeContrast = {gridContrasts[k]};
+            
+            //std::cerr << sep(i,j) << " " << pa(i,j) << " " << gridContrasts[k] << "\n";
+            //std::vector<realT> minMaxQ(minRadius.size(), 0);
+            //return obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+         
+         }
+         
+         
+      }
+   }
+   
+   mx::improc::fitsFile<realT> ff;
+   
+   std::string fn;
+   fn = "gridSep.fits";
+   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   
+   ff.write(fn, sep);
+   
+   
+   fn = "gridPA.fits";
+   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   ff.write(fn, pa);
+   
+   fn = "gridContrasts.dat";
+   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   std::ofstream fout;
+   fout.open(fn);
+   for(int i=0; i< gridContrasts.size(); ++i) fout << gridContrasts[i] << "\n";
+   fout.close();
+   
+   return 0;
+}
+   
 
 int main(int argc, char ** argv)
 {
