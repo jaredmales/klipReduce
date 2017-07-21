@@ -668,6 +668,8 @@ int klipReduce<realT>::doGrid()
          
          for(int k =0; k< gridContrasts.size(); ++k)
          {
+            obs->filesRead = false;
+            
             obs->fakeSep = {sep(i,j)};
             obs->fakePA = {pa(i,j)};
             obs->fakeContrast = {gridContrasts[k]};
