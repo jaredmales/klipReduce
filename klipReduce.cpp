@@ -16,7 +16,9 @@
 
 #include <libgen.h>
 
-/** A program to run the mxlib KLIP pipeline
+/// A program to run the mxlib KLIP pipeline
+/**
+  * 
   */
 template<typename _realT>
 class klipReduce : public mx::application
@@ -26,7 +28,7 @@ public:
    
 protected:
 
-   bool doHelp;
+   //bool doHelp;
    
    //Basic Setup [HCIobservation]:
    std::string directory;
@@ -127,7 +129,7 @@ protected:
 public:
    klipReduce()
    {
-      doHelp = false;
+      //doHelp = false;
       
       obs = 0;
       
@@ -279,7 +281,7 @@ public:
    
    void loadConfig()
    { 
-      config(doHelp, "help");
+      //config(doHelp, "help");
       
       config(directory, "directory");
       config(prefix, "prefix");
