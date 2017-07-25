@@ -681,7 +681,7 @@ int klipReduce<realT>::doGrid()
             
             //std::cerr << sep(i,j) << " " << pa(i,j) << " " << gridContrasts[k] << "\n";
             std::vector<realT> minMaxQ(minRadius.size(), 0);
-            //obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+            obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
          
          }
          
