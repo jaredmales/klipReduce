@@ -634,6 +634,8 @@ int klipReduce<realT>::doGrid()
    x0 =  -1 * gridCenterSep * sin( mx::math::dtor(gridCenterPA) );
    y0 = gridCenterSep * cos( mx::math::dtor(gridCenterPA) );
    
+   std::cerr << gridCenterSep << " " << x0 << " " << y0 << "\n";
+   
    int Nrad = 2 * floor(gridHalfWidthRad / gridDeltaRad) + 1;
    int Npa = 2 * floor(gridHalfWidthPA / gridDeltaPA) + 1;
    
@@ -648,11 +650,11 @@ int klipReduce<realT>::doGrid()
    
    for(int i=0; i<Nrad; ++i)
    {
-      xp = -0.5*(Nrad - 1) + i*gridDeltaRad;
+      xp = (-0.5*(Nrad - 1) + i)*gridDeltaRad;
       
       for(int j=0; j< Npa; ++j)
       {
-         yp = -0.5*(Npa - 1) + j*gridDeltaPA;
+         yp = (-0.5*(Npa - 1) + j)*gridDeltaPA;
          
       
          q = mx::math::dtor(90-gridCenterPA);
@@ -667,6 +669,7 @@ int klipReduce<realT>::doGrid()
          
          pa(i,j) = mx::math::angleMod(mx::math::rtod( atan2(y, x))  - 90.0);
          
+         std::cerr << sep(i,j) << " " << pa(i,j) << "\n";
          
          for(int k =0; k< gridContrasts.size(); ++k)
          {
@@ -678,7 +681,7 @@ int klipReduce<realT>::doGrid()
             
             //std::cerr << sep(i,j) << " " << pa(i,j) << " " << gridContrasts[k] << "\n";
             std::vector<realT> minMaxQ(minRadius.size(), 0);
-            obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+            //obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
          
          }
          
