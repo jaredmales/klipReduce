@@ -28,8 +28,6 @@ public:
    
 protected:
 
-   //bool doHelp;
-   
    //Basic Setup [HCIobservation]:
    std::string directory;
    std::string prefix;
@@ -129,10 +127,7 @@ protected:
 public:
    klipReduce()
    {
-      //doHelp = false;
-      
       obs = 0;
-      
 
       deleteFront = 0;
       deleteBack = 0;
@@ -281,8 +276,6 @@ public:
    
    void loadConfig()
    { 
-      //config(doHelp, "help");
-      
       config(directory, "directory");
       config(prefix, "prefix");
       config(extension, "extension");
