@@ -20,11 +20,12 @@
 /**
   * 
   */
-template<typename _realT>
+template<typename _realT, typename _evCalcT=double>
 class klipReduce : public mx::application
 {
 public:
    typedef _realT realT;
+   typedef _evCalcT evCalcT;
    
 protected:
 
@@ -120,7 +121,7 @@ protected:
    int doGrid();
    
    //mx::improc::KLIPreduction<realT, mx::improc::derotVisAO<realT>, realT> * obs;
-   mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT> * obs;
+   mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT> * obs;
    
    
    
@@ -382,11 +383,11 @@ public:
          
          if(fileList != "")
          {
-            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT>(fileList);
+            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(fileList);
          }
          else
          {
-            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, realT>(directory, prefix, extension);
+            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension);
          } 
       }
       
@@ -576,8 +577,8 @@ public:
    
 };
 
-template<typename realT>
-int klipReduce<realT>::doGrid()
+template<typename realT, typename evCalcT>
+int klipReduce<realT, evCalcT>::doGrid()
 {
    if( gridCenterSep == 0) 
    {
@@ -709,7 +710,7 @@ int klipReduce<realT>::doGrid()
 int main(int argc, char ** argv)
 {
  
-   klipReduce<float> kr;
+   klipReduce<float, float> kr;
    
    try
    {
