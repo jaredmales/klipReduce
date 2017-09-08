@@ -710,6 +710,11 @@ int klipReduce<realT, evCalcT>::doGrid()
 int main(int argc, char ** argv)
 {
  
+#ifdef _OPENMP
+   std::cerr << "I think maximum number of threads is: " << omp_get_max_threads() << "\n";
+#endif 
+   
+   
    klipReduce<float, float> kr;
    
    try
