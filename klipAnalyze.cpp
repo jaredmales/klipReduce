@@ -2,6 +2,7 @@
 
 
 
+#include <mx/math/geo.hpp>
 
 #include <mx/improc/fitsFile.hpp>
 
@@ -126,7 +127,7 @@ typename eigenImageT::Scalar imageGetVarInMask( const eigenImageT & im,
 
    if(vals.size() < 2) return 0;
    
-   return mx::vectorVariance(vals);
+   return mx::math::vectorVariance(vals);
 }
 
 template<typename eigenCubeT, typename eigenMaskT>
@@ -301,7 +302,7 @@ struct klipAnalyze
    }
    
       
-   void analyzeFile(const std::string & fname)
+   void analyzeFilePP(const std::string & fname)
    {
       
       mx::improc::fitsFile<float> ff;
@@ -318,6 +319,60 @@ struct klipAnalyze
       head.append("QTHRESH");
       head.append("MINDPX");
       head.append("INCLREFN");
+      
+#pragma omp critical
+      ff.read(ims, head, fname);
+
+      processHeader(head);
+      
+      positivePlanet();
+   
+      seps = {21.6};
+     // cubeGaussUnsharpMask(ims, 20.0);
+      cubeGaussSmooth(ims, 6.0);
+      
+      mx::improc::eigenImage<float> im, stdIm, mask;
+   
+      mask.resize(ims.rows(), ims.cols());
+      mask.setConstant(1.0);
+      
+      floatT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( mx::math::dtor(pas[0]) );
+      floatT masky = 0.5*(ims.rows()-1) + seps[0] * cos( mx::math::dtor(pas[0]) );
+      floatT maskr = 20;
+      
+      mx::improc::maskCircle(mask, maskx, masky, maskr);
+            
+      
+      //ds9(mask);
+      
+      mx::improc::eigenCube<float> stdImc;
+   
+      mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
+   
+      cubeGetMaxInMask(stds, ims, mask, 0);
+      
+   }
+   
+   
+   void analyzeFileNP(const std::string & fname)
+   {
+      
+      mx::improc::fitsFile<float> ff;
+
+      mx::improc::eigenCube<float> ims, proc;
+   
+      mx::improc::fitsHeader head;
+      head.append("FAKEPA");
+      head.append("FAKECONT");
+      head.append("FAKESEP");
+      head.append("REGMINR");
+      head.append("REGMAXR");
+      head.append("NMODES");
+      head.append("QTHRESH");
+      head.append("MINDPX");
+      head.append("INCLREFN");
+      
+   #pragma omp critical
       ff.read(ims, head, fname);
 
       processHeader(head);
@@ -365,9 +420,11 @@ struct klipAnalyze
       cubeGetVarInMask(stds, ims, mask, 0);
    }
    
+   
    void output(const std::string & fname)
    {
             
+#pragma omp critical
       for(int i=0;i<stds.size(); ++i)
       {
          std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
@@ -379,14 +436,22 @@ struct klipAnalyze
    void processFile( const std::string & fname, floatT sep = -1, bool parsePA = false )
    {
       initialize();
-      if(sep != -1) seps = {sep, sep};
-      if(parsePA)
-      {
-         floatT pa = getPAfromFileName(fname);
-         pas = {pa,pa};
-      }
+//       if(sep != -1) seps = {sep, sep};
+//       if(parsePA)
+//       {
+//          floatT pa = getPAfromFileName(fname);
+//          pas = {pa,pa};
+//       }
       
-      analyzeFile(fname);
+      analyzeFilePP(fname);
+      output(basename(fname.c_str()));
+   
+   }
+   
+   void processFilePP( const std::string & fname)
+   {
+      initialize();
+      analyzeFilePP(fname);
       output(basename(fname.c_str()));
    
    }
@@ -397,17 +462,19 @@ struct klipAnalyze
 int main()
 {
 
-   std::vector<std::string> files = mx::getFileNames("/home/jrmales/findr/grid/gridOut3", "finim", "",".fits");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic0001/", "output", "",".fits");
    
    //std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/VisAO/2014.04.15/GQLup_ha_sdi_25s/bot/cent/findr/run1/", "output_97.1579", ".fits");
    
-   klipAnalyze<float> ka;
+  
    
-   ka.fixedSep = 21.5;
-   ka.fixedPA = 214.0;
    
+   #pragma omp parallel for
    for(int i=0; i<files.size(); ++i)
    {
+      klipAnalyze<float> ka;
+      
+      #pragma omp critical
       std::cerr << basename(files[i].c_str()) << " " << i+1 << "/" << files.size() << "\n";
       ka.processFile(files[i]);//, 90.92, true);
    }
