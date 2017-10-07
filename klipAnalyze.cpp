@@ -462,7 +462,7 @@ struct klipAnalyze
 int main()
 {
 
-   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic0001/", "output", "",".fits");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/findr/bpic0001", "output", "",".fits");
    
    //std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/VisAO/2014.04.15/GQLup_ha_sdi_25s/bot/cent/findr/run1/", "output_97.1579", ".fits");
    
