@@ -14,6 +14,10 @@
 #include <mx/gslInterpolation.hpp>
 #include <mx/fileUtils.hpp>
 
+#include <mx/math/fit/fitGaussian.hpp>
+
+using namespace mx::improc;
+
 template<typename eigenImageT>
 void imageGaussUnsharpMask(eigenImageT & im, typename eigenImageT::Scalar fwhm)
 {
@@ -145,6 +149,82 @@ void cubeGetVarInMask( std::vector<typename eigenCubeT::Scalar> & vars,
    
 }
 
+template<typename realT>
+int centroidImage( realT & x,
+                   realT & y,
+                   realT & A,
+                   realT & fwhm_x,
+                   realT & fwhm_y,
+                   realT & theta,
+                   eigenImage<realT> & im
+                 )
+{
+   realT Ag, xg, yg, xFWHM, yFWHM, angG;
+   
+   //Get a guess at the params
+   mx::math::fit::guessGauss2D_ang<realT>( Ag, xg, yg, xFWHM, yFWHM, angG, im, 3, 15, 10, x, y);
+
+   //Now fit it.
+   mx::math::fit::fitGaussian2Dgen<realT> fg;
+   fg.setGuess(0, Ag, xg, yg, fwhm2sigma(xFWHM), fwhm2sigma(yFWHM), angG);
+   
+   fg.setArray(im.data(), im.rows(), im.cols());
+   fg.fit();
+   
+   x = fg.x0();
+   y = fg.y0();
+   A = fg.A();
+   fwhm_x = sigma2fwhm(fg.sigma_x());
+   fwhm_y = sigma2fwhm(fg.sigma_y());
+   theta = fg.theta();
+   
+   return 0;
+}
+
+template<typename realT>
+int centroidImageCube( std::vector<realT> & x,
+                       std::vector<realT> & y,
+                       std::vector<realT> & A,
+                       std::vector<realT> & fwhm_x,
+                       std::vector<realT> & fwhm_y,
+                       std::vector<realT> & theta,
+                       eigenCube<realT> & ims,
+                       realT x0,
+                       realT y0
+                     )
+{
+   x.resize(ims.planes());
+   y.resize(ims.planes());
+   A.resize(ims.planes());
+   fwhm_x.resize(ims.planes());
+   fwhm_y.resize(ims.planes());
+   theta.resize(ims.planes());
+   
+   #pragma omp parallel
+   {
+      eigenImage<realT> im;
+      realT tx, ty, tA, tfx, tfy, tt;
+
+      #pragma omp for
+      for(int i=0; i< ims.planes(); ++i)
+      {
+         tx = x0;
+         ty = y0;
+         
+         im = ims.image(i);
+         centroidImage(tx, ty, tA, tfx, tfy, tt, im);
+         x[i] = tx;
+         y[i] = ty;
+         A[i] = tA;
+         fwhm_x[i] = tfx;
+         fwhm_y[i] = tfy;
+         theta[i] = tt;
+      }
+   }
+   
+   return 0;
+}
+
 /// Convert a string to a std::vector of values
 /** Parses the string based on the delimiter character template parameter.
   * 
@@ -183,23 +263,26 @@ std::vector<typeT> convertFromStringVector(const std::string & str)
    return vec;
 }
 
-template<typename floatT>
+template<typename realT>
 struct klipAnalyze
 {
-   std::vector<floatT> pas;
-   std::vector<floatT> contrasts;
-   std::vector<floatT> seps;
+   std::vector<realT> pas;
+   std::vector<realT> contrasts;
+   std::vector<realT> seps;
    std::vector<int> nmodes;
-   floatT regminr;
-   floatT regmaxr;
-   floatT qthresh;
+   realT regminr;
+   realT regmaxr;
+   realT qthresh;
    int inclrefn;
-   floatT mindpx;
+   realT mindpx;
    
-   floatT fixedPA;
-   floatT fixedSep;
+   realT fixedPA;
+   realT fixedSep;
    
-   std::vector<floatT> stds;
+   std::vector<realT> stds;
+   std::vector<realT> As;
+   std::vector<realT> dxs;
+   std::vector<realT> dys;
    
    mx::improc::ds9Interface ds9;
    
@@ -225,6 +308,9 @@ struct klipAnalyze
       mindpx = -1;
       
       stds.clear();
+      As.clear();
+      dxs.clear();
+      dys.clear();
       
    }
    
@@ -232,15 +318,15 @@ struct klipAnalyze
    {
       if(pas.size() == 0)
       {
-         pas = convertFromStringVector<floatT>(head["FAKEPA"].String());
+         pas = convertFromStringVector<realT>(head["FAKEPA"].String());
       }
       if(contrasts.size() == 0)
       {
-         contrasts = convertFromStringVector<floatT>(head["FAKECONT"].String());
+         contrasts = convertFromStringVector<realT>(head["FAKECONT"].String());
       }
       if(seps.size() == 0)
       {
-         seps = convertFromStringVector<floatT>(head["FAKESEP"].String());
+         seps = convertFromStringVector<realT>(head["FAKESEP"].String());
       }
       if(nmodes.size() == 0)
       {
@@ -248,15 +334,15 @@ struct klipAnalyze
       }
       if(regminr == -1)
       {
-         regminr = mx::convertFromString<floatT>(head["REGMINR"].String());
+         regminr = mx::convertFromString<realT>(head["REGMINR"].String());
       }
       if(regmaxr == -1)
       {
-         regmaxr = mx::convertFromString<floatT>(head["REGMAXR"].String());
+         regmaxr = mx::convertFromString<realT>(head["REGMAXR"].String());
       }
       if(qthresh == -1)
       {
-         qthresh = mx::convertFromString<floatT>(head["QTHRESH"].String());
+         qthresh = mx::convertFromString<realT>(head["QTHRESH"].String());
       }
       if(inclrefn == -1)
       {
@@ -264,7 +350,7 @@ struct klipAnalyze
       }
       if(mindpx == -1)
       {
-         mindpx = head["MINDPX"].Value<floatT>();
+         mindpx = head["MINDPX"].Value<realT>();
       }
    }
    
@@ -282,7 +368,7 @@ struct klipAnalyze
       }
    }
     
-   floatT getPAfromFileName(const std::string & fname)
+   realT getPAfromFileName(const std::string & fname)
    {
       int p1 = fname.size()-1;
       
@@ -298,7 +384,7 @@ struct klipAnalyze
       ++p0;
       
 
-      return mx::convertFromString<floatT>(fname.substr(p0, p1-p0));
+      return mx::convertFromString<realT>(fname.substr(p0, p1-p0));
    }
    
       
@@ -320,14 +406,14 @@ struct klipAnalyze
       head.append("MINDPX");
       head.append("INCLREFN");
       
-#pragma omp critical
+      #pragma omp critical
       ff.read(ims, head, fname);
 
       processHeader(head);
       
       positivePlanet();
    
-      seps = {21.6};
+      //seps = {21.6};
      // cubeGaussUnsharpMask(ims, 20.0);
       cubeGaussSmooth(ims, 6.0);
       
@@ -335,10 +421,10 @@ struct klipAnalyze
    
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
-      
-      floatT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( mx::math::dtor(pas[0]) );
-      floatT masky = 0.5*(ims.rows()-1) + seps[0] * cos( mx::math::dtor(pas[0]) );
-      floatT maskr = 20;
+            
+      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( mx::math::dtor(pas[0]) );
+      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( mx::math::dtor(pas[0]) );
+      realT maskr = 20;
       
       mx::improc::maskCircle(mask, maskx, masky, maskr);
             
@@ -351,6 +437,25 @@ struct klipAnalyze
    
       cubeGetMaxInMask(stds, ims, mask, 0);
       
+      std::vector<realT> x;
+      std::vector<realT> y;
+      std::vector<realT> A;
+      std::vector<realT> fwhm_x;
+      std::vector<realT> fwhm_y;
+      std::vector<realT> theta;
+      
+      centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, maskx, masky);
+   
+      As.resize(A.size());
+      dxs.resize(x.size());
+      dys.resize(y.size());
+      
+      for(int i=0;i< dxs.size(); ++i)
+      {
+         As[i] = A[i];
+         dxs[i] = x[i] - maskx;
+         dys[i] = y[i] - masky;
+      }
    }
    
    
@@ -385,11 +490,11 @@ struct klipAnalyze
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
       
-      floatT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( pas[0]*3.14159/180.0);
-      floatT masky = 0.5*(ims.rows()-1) + seps[0] * cos( pas[0]*3.14159/180.0);
+      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( pas[0]*3.14159/180.0);
+      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( pas[0]*3.14159/180.0);
       
-      //floatT maskx = 0.5*(ims.cols()-1) - fixedSep * sin( fixedPA*3.14159/180.0);
-      //floatT masky = 0.5*(ims.rows()-1) + fixedSep * cos( fixedPA*3.14159/180.0);
+      //realT maskx = 0.5*(ims.cols()-1) - fixedSep * sin( fixedPA*3.14159/180.0);
+      //realT masky = 0.5*(ims.rows()-1) + fixedSep * cos( fixedPA*3.14159/180.0);
       
       mx::improc::eigenImage<float> rIm, qIm;
       rIm.resize(ims.rows(), ims.cols());
@@ -402,7 +507,7 @@ struct klipAnalyze
       std::vector<size_t> maskdx =  mx::improc::annulusIndices( rIm, qIm, xcen, ycen, 16, 26, pas[0]-30+90, pas[0]+30+90);
                                                     
       
-      floatT maskr = 20;
+      realT maskr = 20;
       
       //mx::improc::maskCircle(mask, maskx, masky, maskr);
             
@@ -429,17 +534,17 @@ struct klipAnalyze
       {
          std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
          std::cout << mindpx << " " << inclrefn << " " << nmodes[i] << " " << stds[i] << " ";
-         std::cout << "0 0 0\n";
+         std::cout << As[i] << " " << dxs[i] << " " << dys[i] << "\n";
       }
    }
    
-   void processFile( const std::string & fname, floatT sep = -1, bool parsePA = false )
+   void processFile( const std::string & fname, realT sep = -1, bool parsePA = false )
    {
       initialize();
 //       if(sep != -1) seps = {sep, sep};
 //       if(parsePA)
 //       {
-//          floatT pa = getPAfromFileName(fname);
+//          realT pa = getPAfromFileName(fname);
 //          pas = {pa,pa};
 //       }
       
@@ -462,7 +567,7 @@ struct klipAnalyze
 int main()
 {
 
-   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic0001/", "output", "",".fits");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/findr/combo", "output", "",".fits");
    
    //std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/VisAO/2014.04.15/GQLup_ha_sdi_25s/bot/cent/findr/run1/", "output_97.1579", ".fits");
    
