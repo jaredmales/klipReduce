@@ -15,6 +15,10 @@
 #include <mx/fileUtils.hpp>
 
 #include <mx/math/fit/fitGaussian.hpp>
+#include <mx/math/geo.hpp>
+using namespace mx::math;
+
+#include "include/gridProcess.hpp"
 
 using namespace mx::improc;
 
@@ -281,8 +285,8 @@ struct klipAnalyze
    
    std::vector<realT> stds;
    std::vector<realT> As;
-   std::vector<realT> dxs;
-   std::vector<realT> dys;
+   std::vector<realT> drs;
+   std::vector<realT> dqs;
    
    mx::improc::ds9Interface ds9;
    
@@ -309,8 +313,8 @@ struct klipAnalyze
       
       stds.clear();
       As.clear();
-      dxs.clear();
-      dys.clear();
+      drs.clear();
+      dqs.clear();
       
    }
    
@@ -422,8 +426,8 @@ struct klipAnalyze
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
             
-      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( mx::math::dtor(pas[0]) );
-      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( mx::math::dtor(pas[0]) );
+      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( dtor(pas[0]) );
+      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( dtor(pas[0]) );
       realT maskr = 20;
       
       mx::improc::maskCircle(mask, maskx, masky, maskr);
@@ -447,14 +451,19 @@ struct klipAnalyze
       centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, maskx, masky);
    
       As.resize(A.size());
-      dxs.resize(x.size());
-      dys.resize(y.size());
+      drs.resize(x.size());
+      dqs.resize(y.size());
       
-      for(int i=0;i< dxs.size(); ++i)
+      realT msep, mq;
+      for(int i=0;i< drs.size(); ++i)
       {
          As[i] = A[i];
-         dxs[i] = x[i] - maskx;
-         dys[i] = y[i] - masky;
+         msep = sqrt(x[i]*x[i] + y[i]+y[i]);
+         drs[i] = msep - seps[0];
+         
+         mq = angleMod(rtod(atan2( -x[i], y[i])));
+         
+         dqs[i] = angleDiff(mq, pas[0]) ;
       }
    }
    
@@ -534,7 +543,7 @@ struct klipAnalyze
       {
          std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
          std::cout << mindpx << " " << inclrefn << " " << nmodes[i] << " " << stds[i] << " ";
-         std::cout << As[i] << " " << dxs[i] << " " << dys[i] << "\n";
+         std::cout << As[i] << " " << drs[i] << " " << dqs[i] << "\n";
       }
    }
    
@@ -567,12 +576,10 @@ struct klipAnalyze
 int main()
 {
 
+#if 1
+   
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001", "output", "",".fits");
-   
-   //std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/VisAO/2014.04.15/GQLup_ha_sdi_25s/bot/cent/findr/run1/", "output_97.1579", ".fits");
-   
-  
-   
+
    
    #pragma omp parallel for
    for(int i=0; i<files.size(); ++i)
@@ -583,6 +590,12 @@ int main()
       std::cerr << basename(files[i].c_str()) << " " << i+1 << "/" << files.size() << "\n";
       ka.processFile(files[i]);//, 90.92, true);
    }
+#endif
+
+   //gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001/bpic39001.fpgrid.all.dat");
+   
+   
+   
 //    //float pa = ka.getPAfromFileName(fname);
 //    //ka.pas = {pa, pa};
 //    ka.analyzeFile("/home/jrmales/Data/Magellan/VisAO/2014.04.15/GQLup_ha_sdi_25s/bot/cent/findr/run1/output_327.1585.fits");
