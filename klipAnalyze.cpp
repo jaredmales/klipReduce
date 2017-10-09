@@ -455,13 +455,17 @@ struct klipAnalyze
       dqs.resize(y.size());
       
       realT msep, mq;
+      realT tx, ty;
       for(int i=0;i< drs.size(); ++i)
       {
          As[i] = A[i];
-         msep = sqrt(x[i]*x[i] + y[i]+y[i]);
+         
+         tx = 0.5*(ims.cols()-1) - x[i];
+         ty = 0.5*(ims.rows()-1) - y[i];
+         msep = sqrt(tx*tx + ty*ty);
          drs[i] = msep - seps[0];
          
-         mq = angleMod(rtod(atan2( -x[i], y[i])));
+         mq = angleMod(rtod(atan2( -tx, ty)));
          
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
