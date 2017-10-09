@@ -465,7 +465,7 @@ struct klipAnalyze
          msep = sqrt(tx*tx + ty*ty);
          drs[i] = msep - seps[0];
          
-         mq = angleMod(rtod(atan2( ty, -tx)));
+         mq = angleMod(rtod(atan2( tx, ty)));
          
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
