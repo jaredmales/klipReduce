@@ -460,12 +460,12 @@ struct klipAnalyze
       {
          As[i] = A[i];
          
-         tx = 0.5*(ims.cols()-1) - x[i];
-         ty = 0.5*(ims.rows()-1) - y[i];
+         tx = x[i] - 0.5*(ims.cols()-1);
+         ty = y[i] - 0.5*(ims.rows()-1);
          msep = sqrt(tx*tx + ty*ty);
          drs[i] = msep - seps[0];
          
-         mq = angleMod(rtod(atan2( tx, ty)));
+         mq = angleMod( rtod(atan2( -tx, ty) ) );
          
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
