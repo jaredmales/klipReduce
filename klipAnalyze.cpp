@@ -394,7 +394,6 @@ struct klipAnalyze
       
    void analyzeFilePP(const std::string & fname)
    {
-      
       mx::improc::fitsFile<float> ff;
 
       mx::improc::eigenCube<float> ims, proc;
@@ -413,11 +412,30 @@ struct klipAnalyze
       #pragma omp critical
       ff.read(ims, head, fname);
 
+      
       processHeader(head);
       
       positivePlanet();
+
+      
+      
+      realT cenx = 0.5*(ims.cols()-1) - seps[0] * sin( dtor(pas[0]) );
+      realT ceny = 0.5*(ims.rows()-1) + seps[0] * cos( dtor(pas[0]) );
+      
+
+      std::vector<realT> x;
+      std::vector<realT> y;
+      std::vector<realT> A;
+      std::vector<realT> fwhm_x;
+      std::vector<realT> fwhm_y;
+      std::vector<realT> theta;
+
+
+
+      centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
-      //seps = {21.6};
+
+      
      // cubeGaussUnsharpMask(ims, 20.0);
       cubeGaussSmooth(ims, 6.0);
       
@@ -426,11 +444,10 @@ struct klipAnalyze
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
             
-      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( dtor(pas[0]) );
-      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( dtor(pas[0]) );
+      
       realT maskr = 20;
       
-      mx::improc::maskCircle(mask, maskx, masky, maskr);
+      mx::improc::maskCircle(mask, cenx, ceny, maskr);
             
       
       //ds9(mask);
@@ -441,15 +458,8 @@ struct klipAnalyze
    
       cubeGetMaxInMask(stds, ims, mask, 0);
       
-      std::vector<realT> x;
-      std::vector<realT> y;
-      std::vector<realT> A;
-      std::vector<realT> fwhm_x;
-      std::vector<realT> fwhm_y;
-      std::vector<realT> theta;
-      
-      centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, maskx, masky);
-   
+
+      //process results of fit
       As.resize(A.size());
       drs.resize(x.size());
       dqs.resize(y.size());
