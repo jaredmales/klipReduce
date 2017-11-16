@@ -413,9 +413,10 @@ struct klipAnalyze
       #pragma omp critical
       ff.read(ims, head, fname);
 
-      
+      std::cerr << 1 << "\n";
       processHeader(head);
       
+      std::cerr << 2 << "\n";
       positivePlanet();
 
       
@@ -431,7 +432,7 @@ struct klipAnalyze
       std::vector<realT> fwhm_y;
       std::vector<realT> theta;
 
-
+      std::cerr << 3 << "\n";
 
       centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
@@ -609,7 +610,7 @@ int main()
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced", "output", "",".fits");
 
    
-   #pragma omp parallel for
+   //#pragma omp parallel for
    for(int i=0; i<files.size(); ++i)
    {
       klipAnalyze<float> ka;
