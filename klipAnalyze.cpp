@@ -606,7 +606,7 @@ int main()
 
 #if 1
    
-   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39002/reduced", "output", "",".fits");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced", "output", "",".fits");
 
    
    #pragma omp parallel for
