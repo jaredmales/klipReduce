@@ -458,10 +458,12 @@ struct klipAnalyze
       
       mx::improc::eigenCube<float> stdImc;
    
-      std::cerr << 5 << "\n";
+      std::cerr << 6 << "\n";
             
       mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
    
+      std::cerr << 7 << "\n";
+            
       cubeGetMaxInMask(stds, ims, mask, 0);
       
 
@@ -472,6 +474,9 @@ struct klipAnalyze
       
       realT msep, mq;
       realT tx, ty;
+      
+      std::cerr << 8 << "\n";
+            
       for(int i=0;i< drs.size(); ++i)
       {
          As[i] = A[i];
@@ -485,6 +490,8 @@ struct klipAnalyze
          
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
+      
+            std::cerr << 9 << "\n";
    }
    
    
