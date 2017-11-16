@@ -324,6 +324,14 @@ struct klipAnalyze
       if(pas.size() == 0)
       {
          pas = convertFromStringVector<realT>(head["FAKEPA"].String());
+         
+         if(pas.size() == 0)
+         {
+            std::cerr << "No fake PAs in header!\n";
+            exit(-1);
+         }
+
+         
       }
       if(contrasts.size() == 0)
       {
@@ -338,6 +346,13 @@ struct klipAnalyze
       if(seps.size() == 0)
       {
          seps = convertFromStringVector<realT>(head["FAKESEP"].String());
+         
+         if(seps.size() == 0)
+         {
+            std::cerr << "No fake contrasts in header!\n";
+            exit(-1);
+         }
+
       }
       if(nmodes.size() == 0)
       {
@@ -419,10 +434,8 @@ struct klipAnalyze
       #pragma omp critical
       ff.read(ims, head, fname);
 
-      std::cerr << 1 << "\n";
       processHeader(head);
       
-      std::cerr << 2 << "\n";
       positivePlanet();
 
       
@@ -438,16 +451,13 @@ struct klipAnalyze
       std::vector<realT> fwhm_y;
       std::vector<realT> theta;
 
-      std::cerr << 3 << "\n";
 
       centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
 
-      std::cerr << 4 << "\n";
      // cubeGaussUnsharpMask(ims, 20.0);
       cubeGaussSmooth(ims, 6.0);
       
-      std::cerr << 5 << "\n";
             
       mx::improc::eigenImage<float> im, stdIm, mask;
    
@@ -464,12 +474,8 @@ struct klipAnalyze
       
       mx::improc::eigenCube<float> stdImc;
    
-      std::cerr << 6 << "\n";
-            
       mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
    
-      std::cerr << 7 << "\n";
-            
       cubeGetMaxInMask(stds, ims, mask, 0);
       
 
@@ -481,8 +487,6 @@ struct klipAnalyze
       realT msep, mq;
       realT tx, ty;
       
-      std::cerr << 8 << "\n";
-            
       for(int i=0;i< drs.size(); ++i)
       {
          As[i] = A[i];
@@ -497,7 +501,6 @@ struct klipAnalyze
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
       
-            std::cerr << 9 << "\n";
    }
    
    
@@ -571,15 +574,6 @@ struct klipAnalyze
       #pragma omp critical
       for(int i=0;i<stds.size(); ++i)
       {
-         std::cerr << seps.size() << "\n";
-         std::cerr << pas.size() << "\n";
-         std::cerr << contrasts.size() << "\n";
-         std::cerr << nmodes.size() << "\n";
-         std::cerr << stds.size() << "\n";
-         std::cerr << As.size() << "\n";
-         std::cerr << drs.size() << "\n";
-         std::cerr << dqs.size() << "\n";
-         
          std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
          std::cout << mindpx << " " << inclrefn << " " << nmodes[i] << " " << stds[i] << " ";
          std::cout << As[i] << " " << drs[i] << " " << dqs[i] << "\n";
@@ -636,7 +630,7 @@ int main()
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced", "output", "",".fits");
 
    
-   //#pragma omp parallel for
+   #pragma omp parallel for
    for(int i=0; i<files.size(); ++i)
    {
       klipAnalyze<float> ka;
