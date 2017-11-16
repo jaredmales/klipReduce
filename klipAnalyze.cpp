@@ -328,6 +328,12 @@ struct klipAnalyze
       if(contrasts.size() == 0)
       {
          contrasts = convertFromStringVector<realT>(head["FAKECONT"].String());
+         
+         if(contrasts.size() == 0)
+         {
+            std::cerr << "No fake contrasts in header!\n";
+            exit(-1);
+         }
       }
       if(seps.size() == 0)
       {
