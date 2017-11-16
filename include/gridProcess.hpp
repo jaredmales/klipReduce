@@ -13,7 +13,7 @@ using namespace mx::math;
 template<typename realT>
 struct gridPt
 {
-   std::string fname;
+   std::vector<std::string> fnames;
    std::string sep;
    std::string PA;
    std::vector<realT> pas;
@@ -34,6 +34,7 @@ struct gridPt
    
    void setVals(std::string & linein)
    {
+      fnames.clear();
       pas.clear();
       snr.clear();
       flux.clear();
@@ -42,8 +43,10 @@ struct gridPt
       
       std::istringstream line(linein);
    
+      std::string tfn;
       
-      line >> fname;
+      line >> tfn;
+      fnames.push_back(tfn);
       line >> sep;
       line >> PA;
       
@@ -99,6 +102,7 @@ int gridFile( const std::string & outDir,
       
       if(points.count(newpt.getKey()) > 0)
       {
+         points[newpt.getKey()].fnames.push_back(newpt.fnames[0]);
          points[newpt.getKey()].pas.push_back(newpt.pas[0]);
          points[newpt.getKey()].snr.push_back(newpt.snr[0]);
          points[newpt.getKey()].flux.push_back(newpt.flux[0]);
@@ -127,7 +131,7 @@ int gridFile( const std::string & outDir,
       fout.open(fn);
       for(int i=0; i<it->second.n; ++i)
       {
-         fout << it->second.pas[i] << " " << it->second.flux[i] << " " << it->second.snr[i] << " " << it->second.dr[i] << " " << it->second.dq[i] << "\n";
+         fout << it->second.fnames[i] << " " << it->second.pas[i] << " " << it->second.flux[i] << " " << it->second.snr[i] << " " << it->second.dr[i] << " " << it->second.dq[i] << "\n";
       }
       fout.close();
       

@@ -288,6 +288,7 @@ struct klipAnalyze
    std::vector<realT> drs;
    std::vector<realT> dqs;
    
+   
    mx::improc::ds9Interface ds9;
    
    klipAnalyze()
@@ -500,21 +501,18 @@ struct klipAnalyze
       head.append("MINDPX");
       head.append("INCLREFN");
       
-   #pragma omp critical
+#pragma omp critical
       ff.read(ims, head, fname);
 
       processHeader(head);
-      //positivePlanet();
-   
-     // cubeGaussUnsharpMask(ims, 20.0);
-     // cubeGaussSmooth(ims, 6.0);
+
       mx::improc::eigenImage<float> im, stdIm, mask;
    
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
       
-      realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( pas[0]*3.14159/180.0);
-      realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( pas[0]*3.14159/180.0);
+      //realT maskx = 0.5*(ims.cols()-1) - seps[0] * sin( pas[0]*3.14159/180.0);
+      //realT masky = 0.5*(ims.rows()-1) + seps[0] * cos( pas[0]*3.14159/180.0);
       
       //realT maskx = 0.5*(ims.cols()-1) - fixedSep * sin( fixedPA*3.14159/180.0);
       //realT masky = 0.5*(ims.rows()-1) + fixedSep * cos( fixedPA*3.14159/180.0);
@@ -527,18 +525,18 @@ struct klipAnalyze
       float ycen = 0.5*(ims.cols()-1);
       mx::improc::radAngImage( rIm, qIm, xcen, ycen );
       
-      std::vector<size_t> maskdx =  mx::improc::annulusIndices( rIm, qIm, xcen, ycen, 16, 26, pas[0]-30+90, pas[0]+30+90);
+      std::vector<size_t> maskdx =  mx::improc::annulusIndices( rIm, qIm, xcen, ycen, 18, 30, pas[0]-10+90, pas[0]+10+90);
                                                     
       
-      realT maskr = 20;
+      //realT maskr = 20;
       
       //mx::improc::maskCircle(mask, maskx, masky, maskr);
             
       mx::improc::applyMask( mask, maskdx, 0);
       
       //ds9(mask);
-      
-      mx::improc::eigenCube<float> stdImc;
+      //exit(0);
+      //mx::improc::eigenCube<float> stdImc;
    
      // mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
    
@@ -561,6 +559,21 @@ struct klipAnalyze
       }
    }
    
+   void outputNP(const std::string & fname)
+   {
+            
+      //realT min = 1e12;
+      //int mini = -1;
+   #pragma omp critical
+      for(int i=0;i<stds.size(); ++i)
+      {
+         
+         std::cout << seps[0] << " " << pas[0] << " " << contrasts[0] << " " <<  stds[i] << "\n";
+      }
+      
+      //std::cerr << seps[0] << " " << pas[0] << " " << contrasts[0] << " " <<  stds[i] << "\n";
+   }
+   
    void processFile( const std::string & fname, realT sep = -1, bool parsePA = false )
    {
       initialize();
@@ -571,8 +584,9 @@ struct klipAnalyze
 //          pas = {pa,pa};
 //       }
       
-      analyzeFilePP(fname);
-      output(basename(fname.c_str()));
+      //analyzeFilePP(fname);
+      analyzeFileNP(fname);
+      outputNP(basename(fname.c_str()));
    
    }
    
@@ -592,7 +606,7 @@ int main()
 
 #if 1
    
-   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001", "output", "",".fits");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39002/reduced", "output", "",".fits");
 
    
    #pragma omp parallel for
@@ -604,10 +618,37 @@ int main()
       std::cerr << basename(files[i].c_str()) << " " << i+1 << "/" << files.size() << "\n";
       ka.processFile(files[i]);//, 90.92, true);
    }
-#endif
+#endif 
+#if 0
 
-   //gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001/bpic39001.fpgrid.all.dat");
+   std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/neg2/", "finim", "",".fits");
+
+   mx::improc::eigenCube<float> imc;
+   mx::improc::fitsFile<float> ff;
    
+   //ff.read(imc, files);
+   
+   //ff.write("neg.fits", imc);
+   
+   //return 0;
+   
+   //#pragma omp parallel for
+   for(int i=0; i<files.size(); ++i)
+   {
+      klipAnalyze<float> ka;
+      
+      #pragma omp critical
+      std::cerr << basename(files[i].c_str()) << " " << i+1 << "/" << files.size() << "\n";
+      
+      ka.processFile(files[i]);//, 90.92, true);
+   }
+
+#endif 
+#if 0
+
+   gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001/bpic39001.fpgrid.all.dat");
+   
+#endif
    
    
 //    //float pa = ka.getPAfromFileName(fname);
