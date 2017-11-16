@@ -616,7 +616,7 @@ int main()
       
       #pragma omp critical
       std::cerr << basename(files[i].c_str()) << " " << i+1 << "/" << files.size() << "\n";
-      ka.processFile(files[i]);//, 90.92, true);
+      ka.processFilePP(files[i]);//, 90.92, true);
    }
 #endif 
 #if 0
