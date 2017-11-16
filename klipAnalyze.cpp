@@ -562,9 +562,18 @@ struct klipAnalyze
    void output(const std::string & fname)
    {
             
-#pragma omp critical
+      #pragma omp critical
       for(int i=0;i<stds.size(); ++i)
       {
+         std::cerr << seps.size() << "\n";
+         std::cerr << pas.size() << "\n";
+         std::cerr << contrasts.size() << "\n";
+         std::cerr << nmodes.size() << "\n";
+         std::cerr << stds.size() << "\n";
+         std::cerr << As.size() << "\n";
+         std::cerr << drs.size() << "\n";
+         std::cerr << dqs.size() << "\n";
+         
          std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
          std::cout << mindpx << " " << inclrefn << " " << nmodes[i] << " " << stds[i] << " ";
          std::cout << As[i] << " " << drs[i] << " " << dqs[i] << "\n";
