@@ -437,10 +437,12 @@ struct klipAnalyze
       centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
 
-      
+      std::cerr << 4 << "\n";
      // cubeGaussUnsharpMask(ims, 20.0);
       cubeGaussSmooth(ims, 6.0);
       
+      std::cerr << 5 << "\n";
+            
       mx::improc::eigenImage<float> im, stdIm, mask;
    
       mask.resize(ims.rows(), ims.cols());
@@ -456,6 +458,8 @@ struct klipAnalyze
       
       mx::improc::eigenCube<float> stdImc;
    
+      std::cerr << 5 << "\n";
+            
       mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
    
       cubeGetMaxInMask(stds, ims, mask, 0);
