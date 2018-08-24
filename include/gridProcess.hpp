@@ -136,11 +136,11 @@ int gridFile( const std::string & outDir,
       fout.close();
       
       
-      if(it->second.contrast != "0.00061") 
-      {
-         ++it;
-         continue;
-      }
+//       if(it->second.contrast != "0.00061") 
+//       {
+//          ++it;
+//          continue;
+//       }
       int n = it->second.n;
       std::cout << it->first << " " << it->second.n << " " << it->second.qthresh << " ";
       std::cout << vectorMean(it->second.flux) << " " << sqrt(vectorVariance(it->second.flux)) << " ";

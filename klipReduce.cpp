@@ -665,7 +665,7 @@ int klipReduce<realT, evCalcT>::doGrid()
          
          //std::cerr << sep(i,j) << " " << pa(i,j) << "\n";
          
-         for(int k =0; k< gridContrasts.size(); ++k)
+         for(size_t k =0; k< gridContrasts.size(); ++k)
          {
             obs->filesRead = false;
             
@@ -700,7 +700,7 @@ int klipReduce<realT, evCalcT>::doGrid()
    if(obs->outputDir != "") fn = outputDir + "/" + fn;
    std::ofstream fout;
    fout.open(fn);
-   for(int i=0; i< gridContrasts.size(); ++i) fout << gridContrasts[i] << "\n";
+   for(size_t i=0; i< gridContrasts.size(); ++i) fout << gridContrasts[i] << "\n";
    fout.close();
    
    return 0;

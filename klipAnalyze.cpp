@@ -12,7 +12,7 @@
 #include <mx/improc/ds9Interface.hpp>
 
 #include <mx/gslInterpolation.hpp>
-#include <mx/fileUtils.hpp>
+#include <mx/ioutils/fileUtils.hpp>
 
 #include <mx/math/fit/fitGaussian.hpp>
 #include <mx/math/geo.hpp>
@@ -625,7 +625,7 @@ struct klipAnalyze
 int main()
 {
 
-#if 1
+#if 0
    
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced", "output", "",".fits");
 
@@ -665,9 +665,9 @@ int main()
    }
 
 #endif 
-#if 0
+#if 1
 
-   gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/findr/bpic39001/bpic39001.fpgrid.all.dat");
+   gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced/results_nonan.txt");
    
 #endif
    
