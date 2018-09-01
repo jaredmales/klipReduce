@@ -96,6 +96,7 @@ protected:
    std::string combineMethod;
    std::string weightFile;
    _realT sigmaThreshold;
+   _realT minGoodFract {0.0};
    
    std::string outputFile;
    bool exactFName;
@@ -251,6 +252,8 @@ public:
       config.add("combineMethod",  "", "combineMethod",  mx::argType::Required, "", "combineMethod",  false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
       config.add("weightFile",     "", "weightFile",     mx::argType::Required, "", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
       config.add("sigmaThreshold", "", "sigmaThreshold", mx::argType::Required, "", "sigmaThreshold", false, "float" , "Clipping threshold for sigma clipped mean combination.");
+      config.add("minGoodFract", "", "minGoodFract", mx::argType::Required, "", "minGoodFract", false, "float" , "Minimum fraction of good/un-masked pixels to include in final image, otherwise pixel is NaN-ed.");
+      
       config.add("outputFile",     "", "outputFile",     mx::argType::Required, "", "outputFile",     false, "string", "Prefix for output file name.  A 4 digit 0-padded number is appended.");
       config.add("exactFName",     "", "exactFName",     mx::argType::True,     "", "exactFName",     false, "bool"  , "Used outputFile exactly as specified, without appending a number or .fits");
       config.add("outputDir",      "", "outputDir",      mx::argType::Required, "", "outputDir",      false, "string", "The directory where to output files.");
@@ -337,6 +340,8 @@ public:
       config(weightFile, "weightFile");
       
       config(sigmaThreshold, "sigmaThreshold");
+      config(minGoodFract, "minGoodFract");
+      
       config(outputFile, "outputFile");
       config(exactFName, "exactFName");
       
@@ -529,6 +534,7 @@ public:
       
       obs->weightFile = weightFile;
       obs->sigmaThreshold = sigmaThreshold;
+      obs->m_minGoodFract = minGoodFract;
       
       if(outputFile != "")
       {
