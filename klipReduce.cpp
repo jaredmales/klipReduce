@@ -493,13 +493,13 @@ public:
       }
       else obs->Nmodes = Nmodes;
       
-      if(minRadius.size() == 0)
+      if(minRadius.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify minimum radii of KLIP regions (minRadius)\n";
          rv = -1;
       }
       
-      if(maxRadius.size() == 0)
+      if(maxRadius.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify maximum radii of KLIP regions (maxRadius)\n";
          rv = -1;
@@ -571,6 +571,10 @@ public:
       if(mode == "grid")
       {
          return doGrid();
+      }
+      else if(mode == "postprocess")
+      {
+         return obs->processPSFSub(directory, prefix, extension);
       }
       else
       {
