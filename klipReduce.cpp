@@ -381,7 +381,7 @@ public:
       if(directory == "" && prefix == "" && fileList == "")
       {
          std::cerr << invokedName << ": must specify either directory+prefix or fileList\n\n";
-         rv = -1;
+         return -1;
       }
       else
       {
