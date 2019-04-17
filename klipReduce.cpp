@@ -65,6 +65,7 @@ protected:
    std::string coaddMethod;
    int coaddMaxImno;
    realT coaddMaxTime;
+   std::vector<std::string> coaddKeywords;
    
    //Masking
    std::string maskFile;
@@ -225,8 +226,9 @@ public:
       config.add("fakeContrast","", "fakeContrast",mx::argType::Required, "", "fakeContrast", false, "", "");
       
       config.add("coaddMethod","", "coaddMethod",mx::argType::Required, "", "coaddMethod", false, "string", "");
-      config.add("coaddMaxImno","", "coaddMaxImno",mx::argType::Required, "", "coaddMaxImno", false, "", "");
-      config.add("coaddMaxTime","", "coaddMaxTime",mx::argType::Required, "", "coaddMaxTime", false, "", "");
+      config.add("coaddMaxImno","", "coaddMaxImno",mx::argType::Required, "", "coaddMaxImno", false, "int", "");
+      config.add("coaddMaxTime","", "coaddMaxTime",mx::argType::Required, "", "coaddMaxTime", false, "float", "");
+      config.add("coaddKeywords","", "coaddKeywords",mx::argType::Required, "", "coaddKeywords", false, "vector<string>", "");
 
       config.add("maskFile","", "maskFile",mx::argType::Required, "", "maskFile", false, "string", "");
       
@@ -310,7 +312,8 @@ public:
       config(coaddMethod, "coaddMethod");
       config(coaddMaxImno, "coaddMaxImno");
       config(coaddMaxTime, "coaddMaxTime");
-   
+      config(coaddKeywords, "coaddKeywords");
+      
       config(maskFile, "maskFile");
       
       config(preProcess_beforeCoadd, "preProcess_beforeCoadd");
@@ -441,7 +444,8 @@ public:
 
       obs->coaddMaxImno = coaddMaxImno;
       obs->coaddMaxTime = coaddMaxTime;
-
+      obs->coaddKeywords = coaddKeywords;
+      
       obs->maskFile = maskFile;
       
       obs->preProcess_beforeCoadd = preProcess_beforeCoadd;

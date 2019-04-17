@@ -49,6 +49,32 @@ void cubeGaussUnsharpMask(eigenCubeT & imc, typename eigenCubeT::Scalar fwhm)
    }
 }
 
+template<typename eigenImageT>
+void imageAzBoxUnsharpMask(eigenImageT & im, typename eigenImageT::Scalar radW, typename eigenImageT::Scalar azW)
+{
+   eigenImageT fim;
+
+   filterImage(fim, im, azBoxKernel<eigenImageT>( radW, azW));//, 0.5*(im.cols()-1) - 4*radW);
+   
+   im = (im-fim);
+}
+
+template<typename eigenCubeT>
+void cubeAzBoxUnsharpMask(eigenCubeT & imc, typename eigenCubeT::Scalar radW, typename eigenCubeT::Scalar azW)
+{
+   #pragma omp parallel
+   {
+      typename eigenCubeT::imageT im;
+
+      #pragma omp for
+      for(int i=0; i< imc.planes(); ++i)
+      {
+         im = imc.image(i);
+         imageAzBoxUnsharpMask(im, radW, azW);
+         imc.image(i) = im;
+      }
+   }
+}
 
 template<typename eigenImageT>
 void imageGaussSmooth(eigenImageT & im, typename eigenImageT::Scalar fwhm)
@@ -257,7 +283,7 @@ std::vector<typeT> convertFromStringVector(const std::string & str)
       while(p1 < str.size() && str[p1] != delim) ++p1;
  
       
-      vec.push_back( mx::convertFromString<typeT>( str.substr(p0, p1-p0)));
+      vec.push_back( mx::ioutils::convertFromString<typeT>( str.substr(p0, p1-p0)));
       
       p0 = p1+1;
       //while(p0 < str.size() && isspace(str[p0])) ++p0;
@@ -360,15 +386,15 @@ struct klipAnalyze
       }
       if(regminr == -1)
       {
-         regminr = mx::convertFromString<realT>(head["REGMINR"].String());
+         regminr = mx::ioutils::convertFromString<realT>(head["REGMINR"].String());
       }
       if(regmaxr == -1)
       {
-         regmaxr = mx::convertFromString<realT>(head["REGMAXR"].String());
+         regmaxr = mx::ioutils::convertFromString<realT>(head["REGMAXR"].String());
       }
       if(qthresh == -1)
       {
-         qthresh = mx::convertFromString<realT>(head["QTHRESH"].String());
+         qthresh = mx::ioutils::convertFromString<realT>(head["QTHRESH"].String());
       }
       if(inclrefn == -1)
       {
@@ -410,7 +436,7 @@ struct klipAnalyze
       ++p0;
       
 
-      return mx::convertFromString<realT>(fname.substr(p0, p1-p0));
+      return mx::ioutils::convertFromString<realT>(fname.substr(p0, p1-p0));
    }
    
       
@@ -625,6 +651,52 @@ struct klipAnalyze
 int main()
 {
 
+   /*klipAnalyze<float> ka;
+   ka.pas = {120};
+   ka.seps = {46};
+   ka.contrasts = {1e-5};
+   
+   ka.analyzeFilePP("/home/jrmales/Downloads/finim0000.fits");
+   ka.output("");*/
+   
+   eigenCube<float> imc;
+   fitsFile<float> ff;
+   ff.read(imc,"/home/jrmales/Downloads/finim0000.fits");
+   
+   //eigenImage<float> im50 = imc.image(9);
+   
+   for(int ii=0;ii<imc.rows(); ++ii)
+   {
+      for(int jj=0; jj<imc.cols(); ++jj)
+      {
+         for(int pp=0;pp<imc.planes(); ++pp)
+         {
+            if( !isnormal(imc.image(pp)(ii,jj)))  imc.image(pp)(ii,jj)=0;
+         }
+      }
+   }
+   
+   //cubeGaussUnsharpMask(imc, 10.0);
+   cubeAzBoxUnsharpMask(imc, 3,15);
+   cubeGaussUnsharpMask(imc, 8.0);
+   cubeGaussSmooth(imc, (float) 6);
+   
+   ds9Interface ds9(imc, 1);
+   
+   eigenImage<float> mask;
+   mask.resize(imc.rows(), imc.cols());
+   mask.setConstant(1.0);
+   
+   maskCircle( mask, 73, 90, 20 );
+   
+   eigenCube<float> snrc;
+   stddevImageCube( snrc, imc, mask, 10, 80, true); 
+
+   ds9(imc,2);
+   ds9(mask, 3);
+
+   ds9(snrc,4);
+   
 #if 0
    
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced", "output", "",".fits");
@@ -665,7 +737,7 @@ int main()
    }
 
 #endif 
-#if 1
+#if 0
 
    gridFile<double>("out", "/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic/findr/bpic39002/reduced/results_nonan.txt");
    

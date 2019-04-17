@@ -50,7 +50,7 @@ struct gridPt
       line >> sep;
       line >> PA;
       
-      pas.push_back( mx::convertFromString<realT>(PA) );
+      pas.push_back( mx::ioutils::convertFromString<realT>(PA) );
       
       line >> contrast;
       line >> qthresh;
