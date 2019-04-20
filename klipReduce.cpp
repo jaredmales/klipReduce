@@ -179,11 +179,11 @@ public:
       gridHalfWidthPA = 0; 
       gridDeltaPA = 0; 
       
-      
-      
-      
-      
       mode = "basic";
+      
+      config.m_sources = true;
+      
+
    }
 
    ~klipReduce()
@@ -368,13 +368,22 @@ public:
       if(config.m_unusedConfigs.size() > 0)
       {
          std::cerr<< "****************************************************\n";
-         std::cerr << " WARNING: unrecognized config options\n";
+         std::cerr << "WARNING: unrecognized config options:\n";
+         
+         for( auto it = config.m_unusedConfigs.begin(); it != config.m_unusedConfigs.end(); ++it )
+         {
+            std::cerr << "   " << it->second.name;
+            if(config.m_sources) std::cerr << " [" << it->second.sources[0] <<"]\n";
+            else std::cerr << "\n";
+         }
+         
+         std::cerr<< "****************************************************\n";
       }
       
       if(config.nonOptions.size() > 0)
       {
          std::cerr<< "****************************************************\n";
-         std::cerr << " WARNING: unrecognized config options\n";
+         std::cerr << "WARNING: unrecognized command line arguments\n";
       }
    }
    
