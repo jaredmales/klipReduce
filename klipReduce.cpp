@@ -9,7 +9,7 @@
 #include <mx/gnuPlot.hpp>
 
 #include <mx/app/application.hpp>
-
+using namespace mx::app;
 
 #include <mx/improc/ADIDerotator.hpp>
 #include <mx/improc/KLIPreduction.hpp>
@@ -21,7 +21,7 @@
   * 
   */
 template<typename _realT, typename _evCalcT=double>
-class klipReduce : public mx::application
+class klipReduce : public application
 {
 public:
    typedef _realT realT;
@@ -194,84 +194,84 @@ public:
    //This sets up the configuration
    void setupConfig()
    {
-//       config.add( "help", "h", "help", mx::argType::True,  "", "");
-//       config.add( "config","c", "config",mx::argType::Required, "", "config");
+//       config.add( "help", "h", "help", argType::True,  "", "");
+//       config.add( "config","c", "config",argType::Required, "", "config");
 //       
-      config.add("directory","D", "directory",mx::argType::Required, "", "directory", false, "string", "Directory to search for files");
-      config.add("prefix","P", "prefix",mx::argType::Required, "", "prefix", false, "string", "Prefix of the files");
-      config.add("extension","E", "extension",mx::argType::Required, "", "extension", false, "string", "");
-      config.add("fileList","F", "fileList",mx::argType::Required, "", "fileList", false, "string", "");
+      config.add("directory","D", "directory",argType::Required, "", "directory", false, "string", "Directory to search for files");
+      config.add("prefix","P", "prefix",argType::Required, "", "prefix", false, "string", "Prefix of the files");
+      config.add("extension","E", "extension",argType::Required, "", "extension", false, "string", "");
+      config.add("fileList","F", "fileList",argType::Required, "", "fileList", false, "string", "");
       
-      config.add("deleteFront","", "deleteFront",mx::argType::Required, "", "deleteFront", false, "int", "");
-      config.add("deleteBack","", "deleteBack",mx::argType::Required, "", "deleteBack", false, "int", "");
+      config.add("deleteFront","", "deleteFront",argType::Required, "", "deleteFront", false, "int", "");
+      config.add("deleteBack","", "deleteBack",argType::Required, "", "deleteBack", false, "int", "");
 
-      config.add("qualityFile","", "qualityFile",mx::argType::Required, "", "qualityFile", false, "string", "");
-      config.add("qualityThreshold","", "qualityThreshold",mx::argType::Required, "", "qualityThreshold", false, "", "");
-      config.add("thresholdOnly","", "thresholdOnly",mx::argType::True, "", "thresholdOnly", false, "bool", "");
+      config.add("qualityFile","", "qualityFile",argType::Required, "", "qualityFile", false, "string", "");
+      config.add("qualityThreshold","", "qualityThreshold",argType::Required, "", "qualityThreshold", false, "", "");
+      config.add("thresholdOnly","", "thresholdOnly",argType::True, "", "thresholdOnly", false, "bool", "");
       
-      config.add("angleKeyword","", "angleKeyword",mx::argType::Required, "", "angleKeyword", false, "string", "");
-      config.add("angleScale","", "angleScale",mx::argType::Required, "", "angleScale", false, "", "");
-      config.add("angleConstant","", "angleConstant",mx::argType::Required, "", "angleConstant", false, "", "");
+      config.add("angleKeyword","", "angleKeyword",argType::Required, "", "angleKeyword", false, "string", "");
+      config.add("angleScale","", "angleScale",argType::Required, "", "angleScale", false, "", "");
+      config.add("angleConstant","", "angleConstant",argType::Required, "", "angleConstant", false, "", "");
       
-      config.add("MJDKeyword","", "MJDKeyword",mx::argType::Required, "", "MJDKeyword", false, "string", "");
-      config.add("MJDisISO8601","", "MJDisISO8601",mx::argType::True, "", "MJDisISO8601", false, "", "");
-      config.add("imSize","S", "imSize",mx::argType::Required, "", "imSize", false, "", "");
+      config.add("MJDKeyword","", "MJDKeyword",argType::Required, "", "MJDKeyword", false, "string", "");
+      config.add("MJDisISO8601","", "MJDisISO8601",argType::True, "", "MJDisISO8601", false, "", "");
+      config.add("imSize","S", "imSize",argType::Required, "", "imSize", false, "", "");
    
-      config.add("fakeMethod", "",  "fakeMethod",   mx::argType::Required, "", "fakeMethod", false, "string", "");
+      config.add("fakeMethod", "",  "fakeMethod",   argType::Required, "", "fakeMethod", false, "string", "");
       
-      config.add("fakeFileName","", "fakeFileName",mx::argType::Required, "", "fakeFileName", false, "string", "");
-      config.add("fakeScaleFileName","", "fakeScaleFileName",mx::argType::Required, "", "fakeScaleFileName", false, "string", "");
-      config.add("fakeSep","", "fakeSep",mx::argType::Required, "", "fakeSep", false, "", "");
-      config.add("fakePA","", "fakePA",mx::argType::Required, "", "fakePA", false, "", "");
-      config.add("fakeContrast","", "fakeContrast",mx::argType::Required, "", "fakeContrast", false, "", "");
+      config.add("fakeFileName","", "fakeFileName",argType::Required, "", "fakeFileName", false, "string", "");
+      config.add("fakeScaleFileName","", "fakeScaleFileName",argType::Required, "", "fakeScaleFileName", false, "string", "");
+      config.add("fakeSep","", "fakeSep",argType::Required, "", "fakeSep", false, "", "");
+      config.add("fakePA","", "fakePA",argType::Required, "", "fakePA", false, "", "");
+      config.add("fakeContrast","", "fakeContrast",argType::Required, "", "fakeContrast", false, "", "");
       
-      config.add("coaddMethod","", "coaddMethod",mx::argType::Required, "", "coaddMethod", false, "string", "");
-      config.add("coaddMaxImno","", "coaddMaxImno",mx::argType::Required, "", "coaddMaxImno", false, "int", "");
-      config.add("coaddMaxTime","", "coaddMaxTime",mx::argType::Required, "", "coaddMaxTime", false, "float", "");
-      config.add("coaddKeywords","", "coaddKeywords",mx::argType::Required, "", "coaddKeywords", false, "vector<string>", "");
+      config.add("coaddMethod","", "coaddMethod",argType::Required, "", "coaddMethod", false, "string", "");
+      config.add("coaddMaxImno","", "coaddMaxImno",argType::Required, "", "coaddMaxImno", false, "int", "");
+      config.add("coaddMaxTime","", "coaddMaxTime",argType::Required, "", "coaddMaxTime", false, "float", "");
+      config.add("coaddKeywords","", "coaddKeywords",argType::Required, "", "coaddKeywords", false, "vector<string>", "");
 
-      config.add("maskFile","", "maskFile",mx::argType::Required, "", "maskFile", false, "string", "");
+      config.add("maskFile","", "maskFile",argType::Required, "", "maskFile", false, "string", "");
       
-      config.add("preProcess_beforeCoadd","", "preProcess_beforeCoadd",mx::argType::True, "", "preProcess_beforeCoadd", false, "", "");
-      config.add("preProcess_mask","", "preProcess_mask",mx::argType::True, "", "preProcess_mask", false, "string", "");
-      config.add("preProcess_subradprof","", "preProcess_subradprof",mx::argType::True, "", "preProcess_subradprof", false, "", "");
-      config.add("preProcess_azUSM_azW","", "preProcess_azUSM_azW",mx::argType::Required, "", "preProcess_azUSM_azW", false, "", "");
-      config.add("preProcess_azUSM_radW","", "preProcess_azUSM_radW",mx::argType::Required, "", "preProcess_azUSM_radW", false, "", "");
-      config.add("preProcess_gaussUSM_fwhm","", "preProcess_gaussUSM_fwhm",mx::argType::Required, "", "preProcess_gaussUSM_fwhm", false, "", "");
-      config.add("preProcess_outputPrefix","", "preProcess_outputPrefix",mx::argType::Required, "", "preProcess_outputPrefix", false, "", "");
-      config.add("preProcess_only","", "preProcess_only",mx::argType::True, "", "preProcess_only", false, "", "");
-      config.add("skipPreProcess","", "skipPreProcess",mx::argType::True, "", "skipPreProcess", false, "", "");
+      config.add("preProcess_beforeCoadd","", "preProcess_beforeCoadd",argType::True, "", "preProcess_beforeCoadd", false, "", "");
+      config.add("preProcess_mask","", "preProcess_mask",argType::True, "", "preProcess_mask", false, "string", "");
+      config.add("preProcess_subradprof","", "preProcess_subradprof",argType::True, "", "preProcess_subradprof", false, "", "");
+      config.add("preProcess_azUSM_azW","", "preProcess_azUSM_azW",argType::Required, "", "preProcess_azUSM_azW", false, "", "");
+      config.add("preProcess_azUSM_radW","", "preProcess_azUSM_radW",argType::Required, "", "preProcess_azUSM_radW", false, "", "");
+      config.add("preProcess_gaussUSM_fwhm","", "preProcess_gaussUSM_fwhm",argType::Required, "", "preProcess_gaussUSM_fwhm", false, "", "");
+      config.add("preProcess_outputPrefix","", "preProcess_outputPrefix",argType::Required, "", "preProcess_outputPrefix", false, "", "");
+      config.add("preProcess_only","", "preProcess_only",argType::True, "", "preProcess_only", false, "", "");
+      config.add("skipPreProcess","", "skipPreProcess",argType::True, "", "skipPreProcess", false, "", "");
       
-      config.add("minDPx","", "minDPx",mx::argType::Required, "", "minDPx");
-      config.add("excludeMethod","", "excludeMethod",mx::argType::Required, "", "excludeMethod", false, "string", "");
-      config.add("includeRefNum","", "includeRefNum",mx::argType::Required, "", "includeRefNum", false, "", "");
-      config.add("Nmodes","", "Nmodes",mx::argType::Required, "", "Nmodes", false, "", "");
-      config.add("minRadius","", "minRadius",mx::argType::Required, "", "minRadius", false, "", "");
-      config.add("maxRadius","", "maxRadius",mx::argType::Required, "", "maxRadius", false, "", "");
+      config.add("minDPx","", "minDPx",argType::Required, "", "minDPx");
+      config.add("excludeMethod","", "excludeMethod",argType::Required, "", "excludeMethod", false, "string", "");
+      config.add("includeRefNum","", "includeRefNum",argType::Required, "", "includeRefNum", false, "", "");
+      config.add("Nmodes","", "Nmodes",argType::Required, "", "Nmodes", false, "", "");
+      config.add("minRadius","", "minRadius",argType::Required, "", "minRadius", false, "", "");
+      config.add("maxRadius","", "maxRadius",argType::Required, "", "maxRadius", false, "", "");
       
-      config.add("noDerotate","", "noDerotate",mx::argType::False, "", "noDerotate", false, "bool", "Do not derotate before combining.");
+      config.add("noDerotate","", "noDerotate",argType::False, "", "noDerotate", false, "bool", "Do not derotate before combining.");
       
-      config.add("combineMethod",  "", "combineMethod",  mx::argType::Required, "", "combineMethod",  false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
-      config.add("weightFile",     "", "weightFile",     mx::argType::Required, "", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
-      config.add("sigmaThreshold", "", "sigmaThreshold", mx::argType::Required, "", "sigmaThreshold", false, "float" , "Clipping threshold for sigma clipped mean combination.");
-      config.add("minGoodFract", "", "minGoodFract", mx::argType::Required, "", "minGoodFract", false, "float" , "Minimum fraction of good/un-masked pixels to include in final image, otherwise pixel is NaN-ed.");
+      config.add("combineMethod",  "", "combineMethod",  argType::Required, "", "combineMethod",  false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
+      config.add("weightFile",     "", "weightFile",     argType::Required, "", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
+      config.add("sigmaThreshold", "", "sigmaThreshold", argType::Required, "", "sigmaThreshold", false, "float" , "Clipping threshold for sigma clipped mean combination.");
+      config.add("minGoodFract", "", "minGoodFract", argType::Required, "", "minGoodFract", false, "float" , "Minimum fraction of good/un-masked pixels to include in final image, otherwise pixel is NaN-ed.");
       
-      config.add("outputFile",     "", "outputFile",     mx::argType::Required, "", "outputFile",     false, "string", "Prefix for output file name.  A 4 digit 0-padded number is appended.");
-      config.add("exactFName",     "", "exactFName",     mx::argType::True,     "", "exactFName",     false, "bool"  , "Used outputFile exactly as specified, without appending a number or .fits");
-      config.add("outputDir",      "", "outputDir",      mx::argType::Required, "", "outputDir",      false, "string", "The directory where to output files.");
+      config.add("outputFile",     "", "outputFile",     argType::Required, "", "outputFile",     false, "string", "Prefix for output file name.  A 4 digit 0-padded number is appended.");
+      config.add("exactFName",     "", "exactFName",     argType::True,     "", "exactFName",     false, "bool"  , "Used outputFile exactly as specified, without appending a number or .fits");
+      config.add("outputDir",      "", "outputDir",      argType::Required, "", "outputDir",      false, "string", "The directory where to output files.");
       
-      config.add("outputPSFSub",      "", "outputPSFSub",      mx::argType::True,     ""    , "outputPSFSub", false, "bool"  , "Output the PSF subtracted images (default false)");
-      config.add("psfSubPrefix",      "", "psfSubPrefix",      mx::argType::Required, ""    , "psfSubPrefix", false, "string", "Prefix of the PSF subtracted output files.");
+      config.add("outputPSFSub",      "", "outputPSFSub",      argType::True,     ""    , "outputPSFSub", false, "bool"  , "Output the PSF subtracted images (default false)");
+      config.add("psfSubPrefix",      "", "psfSubPrefix",      argType::Required, ""    , "psfSubPrefix", false, "string", "Prefix of the PSF subtracted output files.");
       
-      config.add("mode",              "", "mode",              mx::argType::Required, ""    , "mode",         false, "string", "The mode of operation: either \"grid\" or \"normal\" (the default)");
-      config.add("grid.centerSep",    "", "grid.centerSep",    mx::argType::Required, "grid", "centerSep",    false, "float" , "The grid center in separation [pixels]" );
-      config.add("grid.centerPA",     "", "grid.centerPA",     mx::argType::Required, "grid", "centerPA",     false, "float" , "The grid center in position angle [degrees]" );
-      config.add("grid.halfWidthSep", "", "grid.halfWidthSep", mx::argType::Required, "grid", "halfWidthSep", false, "float" , "The half width of the grid in spearation [pixels]" );
-      config.add("grid.dalfWidthPA",  "", "grid.halfWidthPA",  mx::argType::Required, "grid", "halfWidthPA",  false, "float" , "The half width of the grid in PA [degrees]" );
-      config.add("grid.deltaSep",     "", "grid.deltaSep",     mx::argType::Required, "grid", "deltaSep",     false, "float" , "The grid step size in separation [pixels]" );
-      config.add("grid.celtaPA",      "", "grid.deltaPA",      mx::argType::Required, "grid", "deltaPA",      false, "float" , "The grid step size in PA [degrees]" );
-      config.add("grid.contrasts",    "", "grid.contrasts",    mx::argType::Required, "grid", "contrasts",    false, "vector float" , "The contrast grid [planet:star]." );
-      //config.add("","", "",mx::argType::Required, "", ""));
+      config.add("mode",              "", "mode",              argType::Required, ""    , "mode",         false, "string", "The mode of operation: either \"grid\" or \"normal\" (the default)");
+      config.add("grid.centerSep",    "", "grid.centerSep",    argType::Required, "grid", "centerSep",    false, "float" , "The grid center in separation [pixels]" );
+      config.add("grid.centerPA",     "", "grid.centerPA",     argType::Required, "grid", "centerPA",     false, "float" , "The grid center in position angle [degrees]" );
+      config.add("grid.halfWidthSep", "", "grid.halfWidthSep", argType::Required, "grid", "halfWidthSep", false, "float" , "The half width of the grid in spearation [pixels]" );
+      config.add("grid.dalfWidthPA",  "", "grid.halfWidthPA",  argType::Required, "grid", "halfWidthPA",  false, "float" , "The half width of the grid in PA [degrees]" );
+      config.add("grid.deltaSep",     "", "grid.deltaSep",     argType::Required, "grid", "deltaSep",     false, "float" , "The grid step size in separation [pixels]" );
+      config.add("grid.celtaPA",      "", "grid.deltaPA",      argType::Required, "grid", "deltaPA",      false, "float" , "The grid step size in PA [degrees]" );
+      config.add("grid.contrasts",    "", "grid.contrasts",    argType::Required, "grid", "contrasts",    false, "vector float" , "The contrast grid [planet:star]." );
+      //config.add("","", "",argType::Required, "", ""));
       
    }
 
@@ -365,6 +365,17 @@ public:
       
       config(mode, "mode");
       
+      if(config.m_unusedConfigs.size() > 0)
+      {
+         std::cerr<< "****************************************************\n";
+         std::cerr << " WARNING: unrecognized config options\n";
+      }
+      
+      if(config.nonOptions.size() > 0)
+      {
+         std::cerr<< "****************************************************\n";
+         std::cerr << " WARNING: unrecognized config options\n";
+      }
    }
    
    void printUsage()
@@ -555,6 +566,10 @@ public:
       {
          obs->PSFSubPrefix = psfSubPrefix;
       }
+      
+      
+      
+      
       
       return rv;
    }
