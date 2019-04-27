@@ -249,7 +249,7 @@ public:
       config.add("minRadius","", "minRadius",argType::Required, "", "minRadius", false, "", "");
       config.add("maxRadius","", "maxRadius",argType::Required, "", "maxRadius", false, "", "");
       
-      config.add("noDerotate","", "noDerotate",argType::False, "", "noDerotate", false, "bool", "Do not derotate before combining.");
+      config.add("noDerotate","", "noDerotate",argType::True, "", "noDerotate", false, "bool", "Do not derotate before combining.");
       
       config.add("combineMethod",  "", "combineMethod",  argType::Required, "", "combineMethod",  false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
       config.add("weightFile",     "", "weightFile",     argType::Required, "", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
@@ -566,6 +566,7 @@ public:
       }
       
       obs->exactFinimName = exactFName;
+      
       
       obs->outputDir = outputDir;
      
