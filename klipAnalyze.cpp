@@ -661,7 +661,7 @@ int main()
    
    eigenCube<float> imc;
    fitsFile<float> ff;
-   ff.read(imc,"/home/jrmales/Downloads/finim0000.fits");
+   ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
    
    //eigenImage<float> im50 = imc.image(9);
    
@@ -687,7 +687,7 @@ int main()
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
    
-   maskCircle( mask, 73, 90, 20 );
+   maskCircle( mask, 87, 97, 20 );
    
    eigenCube<float> snrc;
    stddevImageCube( snrc, imc, mask, 10, 80, true); 
