@@ -82,8 +82,10 @@ protected:
    bool skipPreProcess;
    
    //KLIP parameters
-   realT  minDPx;
+   realT minDPx {0};
+   realT maxDPx {0};
    std::string excludeMethod;
+   std::string excludeMethodMax;
    int includeRefNum;
    std::vector<int> Nmodes;
    std::vector<realT> minRadius;
@@ -130,6 +132,8 @@ protected:
 public:
    klipReduce()
    {
+      m_requireConfigPathLocal = false;
+      
       obs = 0;
 
       deleteFront = 0;
@@ -157,7 +161,6 @@ public:
       preProcess_only = false;
       skipPreProcess = false;
    
-      minDPx = 0;
       includeRefNum = 0;
 
    
@@ -194,9 +197,7 @@ public:
    //This sets up the configuration
    void setupConfig()
    {
-//       config.add( "help", "h", "help", argType::True,  "", "");
-//       config.add( "config","c", "config",argType::Required, "", "config");
-//       
+
       config.add("directory","D", "directory",argType::Required, "", "directory", false, "string", "Directory to search for files");
       config.add("prefix","P", "prefix",argType::Required, "", "prefix", false, "string", "Prefix of the files");
       config.add("extension","E", "extension",argType::Required, "", "extension", false, "string", "");
@@ -242,8 +243,10 @@ public:
       config.add("preProcess_only","", "preProcess_only",argType::True, "", "preProcess_only", false, "", "");
       config.add("skipPreProcess","", "skipPreProcess",argType::True, "", "skipPreProcess", false, "", "");
       
-      config.add("minDPx","", "minDPx",argType::Required, "", "minDPx");
-      config.add("excludeMethod","", "excludeMethod",argType::Required, "", "excludeMethod", false, "string", "");
+      config.add("minDPx","", "minDPx",argType::Required, "", "minDPx", false, "float", "Specify the minimum angle or pixel difference at the inner edge of the search region");
+      config.add("maxDPx","", "maxDPx",argType::Required, "", "maxDPx", false, "float", "Specify the maximum angle or pixel difference at the inner edge of the search region");
+      config.add("excludeMethod","", "excludeMethod",argType::Required, "", "excludeMethod", false, "string", "Method for minimum exclusion.  Values are none (default), pixel, angle, imno.");
+      config.add("excludeMethodMax","", "excludeMethodMax",argType::Required, "", "excludeMethodMax", false, "string", "Method for maximum exclusion.  Values are none (default), pixel, angle, imno.");
       config.add("includeRefNum","", "includeRefNum",argType::Required, "", "includeRefNum", false, "", "");
       config.add("Nmodes","", "Nmodes",argType::Required, "", "Nmodes", false, "", "");
       config.add("minRadius","", "minRadius",argType::Required, "", "minRadius", false, "", "");
@@ -328,7 +331,9 @@ public:
       config(skipPreProcess, "skipPreProcess");
       
       config(minDPx, "minDPx");
+      config(maxDPx, "maxDPx");
       config(excludeMethod, "excludeMethod");
+      config(excludeMethodMax, "excludeMethodMax");
       config(includeRefNum, "includeRefNum");
       
       config(Nmodes, "Nmodes");
@@ -478,25 +483,26 @@ public:
       obs->preProcess_only = preProcess_only;
       obs->skipPreProcess = skipPreProcess;
       
-      obs->mindpx = minDPx;
+      obs->m_minDPx = minDPx;
+      obs->m_maxDPx = maxDPx;
       
       if(excludeMethod != "")
       {
          if(excludeMethod == "none")
          {
-            obs->excludeMethod = mx::improc::HCI::excludeNone;
+            obs->m_excludeMethod = mx::improc::HCI::excludeNone;
          }
          else if(excludeMethod == "pixel")
          {
-            obs->excludeMethod = mx::improc::HCI::excludePixel;
+            obs->m_excludeMethod = mx::improc::HCI::excludePixel;
          }
          else if(excludeMethod == "angle")
          {
-            obs->excludeMethod = mx::improc::HCI::excludeAngle;
+            obs->m_excludeMethod = mx::improc::HCI::excludeAngle;
          }
          else if(excludeMethod == "imno")
          {
-            obs->excludeMethod = mx::improc::HCI::excludeImno;
+            obs->m_excludeMethod = mx::improc::HCI::excludeImno;
          }
          else
          {
@@ -504,12 +510,36 @@ public:
             rv = -1;
          }
       }
-            
+       
+      if(excludeMethodMax != "")
+      {
+         if(excludeMethodMax == "none")
+         {
+            obs->m_excludeMethodMax = mx::improc::HCI::excludeNone;
+         }
+         else if(excludeMethodMax == "pixel")
+         {
+            obs->m_excludeMethodMax = mx::improc::HCI::excludePixel;
+         }
+         else if(excludeMethodMax == "angle")
+         {
+            obs->m_excludeMethodMax = mx::improc::HCI::excludeAngle;
+         }
+         else if(excludeMethodMax == "imno")
+         {
+            obs->m_excludeMethodMax = mx::improc::HCI::excludeImno;
+         }
+         else
+         {
+            std::cerr << invokedName << ": invalid excludeMethodMax.\n";
+            rv = -1;
+         }
+      }
       
       
       
       
-      obs->includeRefNum = includeRefNum;
+      obs->m_includeRefNum = includeRefNum;
       if(Nmodes.size() == 0)
       {
          std::cerr << invokedName << ": must specify number of modes (Nmodes)\n";

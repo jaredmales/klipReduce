@@ -103,7 +103,32 @@ void cubeGaussSmooth(eigenCubeT & imc, typename eigenCubeT::Scalar fwhm)
    }
 }
 
+template<typename eigenImageT>
+void imageAzBoxSmooth(eigenImageT & im, typename eigenImageT::Scalar radW, typename eigenImageT::Scalar azW)
+{
+   eigenImageT fim;
 
+   filterImage(fim, im, azBoxKernel<eigenImageT>( radW, azW));//, 0.5*(im.cols()-1) - 4*radW);
+   
+   im = fim;
+}
+
+template<typename eigenCubeT>
+void cubeAzBoxSmooth(eigenCubeT & imc, typename eigenCubeT::Scalar radW, typename eigenCubeT::Scalar azW)
+{
+   #pragma omp parallel
+   {
+      typename eigenCubeT::imageT im;
+
+      #pragma omp for
+      for(int i=0; i< imc.planes(); ++i)
+      {
+         im = imc.image(i);
+         imageAzBoxSmooth(im, radW, azW);
+         imc.image(i) = im;
+      }
+   }
+}
 
 
 template<typename eigenImageT, typename eigenMaskT>
@@ -661,7 +686,8 @@ int main()
    
    eigenCube<float> imc;
    fitsFile<float> ff;
-   ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
+   //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
+   ff.read(imc, "finim0012.fits");
    
    //eigenImage<float> im50 = imc.image(9);
    
@@ -677,13 +703,14 @@ int main()
    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
-   cubeAzBoxUnsharpMask(imc, 3,15);
-   cubeGaussUnsharpMask(imc, 8.0);
-   cubeGaussSmooth(imc, (float) 6);
+   //cubeAzBoxUnsharpMask(imc, 3,15);
+   cubeGaussUnsharpMask(imc, 10.0);
+   cubeGaussSmooth(imc, (float) 4.8);
+   //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
    
    ds9Interface ds9(imc, 1);
    
-   eigenImage<float> mask;
+   /*eigenImage<float> mask;
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
    
@@ -695,7 +722,7 @@ int main()
    ds9(imc,2);
    ds9(mask, 3);
 
-   ds9(snrc,4);
+   ds9(snrc,4);*/
    
 #if 0
    

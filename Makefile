@@ -1,6 +1,7 @@
 
 
 TARGET=klipReduce
+#OPTIMIZE=-O3
 
 NEED_XPA=no
 NEED_FFTW=no
