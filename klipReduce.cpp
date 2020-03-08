@@ -545,7 +545,7 @@ public:
          std::cerr << invokedName << ": must specify number of modes (Nmodes)\n";
          rv = -1;
       }
-      else obs->Nmodes = Nmodes;
+      else obs->m_Nmodes = Nmodes;
       
       if(minRadius.size() == 0 && mode != "postprocess")
       {
