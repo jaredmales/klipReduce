@@ -673,7 +673,9 @@ struct klipAnalyze
 };
 
 
-int main()
+int main( int argc, 
+          char ** argv
+        )
 {
 
    /*klipAnalyze<float> ka;
@@ -687,7 +689,7 @@ int main()
    eigenCube<float> imc;
    fitsFile<float> ff;
    //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
-   ff.read(imc, "finim0012.fits");
+   ff.read(imc, argv[1]);
    
    //eigenImage<float> im50 = imc.image(9);
    
@@ -704,25 +706,33 @@ int main()
    
    //cubeGaussUnsharpMask(imc, 10.0);
    //cubeAzBoxUnsharpMask(imc, 3,15);
-   cubeGaussUnsharpMask(imc, 10.0);
-   cubeGaussSmooth(imc, (float) 4.8);
+   cubeGaussUnsharpMask(imc, 15.0);
+   cubeGaussSmooth(imc, (float) 3.0);
    //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
    
-   ds9Interface ds9(imc, 1);
+   ds9Interface ds9;
    
-   /*eigenImage<float> mask;
+   //ds9Interface ds9(imc, 1);
+   
+   eigenImage<float> mask;
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
    
-   maskCircle( mask, 87, 97, 20 );
+   maskCircle( mask, 67, 33, 20, 0.0 );
    
    eigenCube<float> snrc;
-   stddevImageCube( snrc, imc, mask, 10, 80, true); 
+   stddevImageCube( snrc, imc, mask, 10, 50, true); 
 
+   for(int p=0; p<snrc.planes();++p)
+   {
+      std::cout << p << " " << (snrc.image(p)*(-1*(mask-1))).maxCoeff() << '\n';
+   }
+   
+   
    ds9(imc,2);
    ds9(mask, 3);
 
-   ds9(snrc,4);*/
+   ds9(snrc,1);
    
 #if 0
    

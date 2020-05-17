@@ -45,16 +45,29 @@ protected:
    
    std::string MJDKeyword;
    bool MJDisISO8601;
-   int imSize;
+   int m_imSize {0};
 
+   
+   //RDI setup
+   std::string m_RDIdirectory;
+   std::string m_RDIprefix;
+   std::string m_RDIextension;
+   std::string m_RDIfileList;
+   
+   int m_RDIdeleteFront {0};
+   int m_RDIdeleteBack {0};
+   std::string m_RDIqualityFile;
+   realT m_RDIqualityThreshold {0};
+   
+   
    //Rotation setup [ADIobservation]
    std::string angleKeyword;
    float angleScale;
    float angleConstant;
    
    //Fake Planet Injection [ADIobservation]
-   int fakeMethod;
-   std::string fakeFileName; ///<FITS file containing the fake planet PSF to inject
+   std::string fakeMethod {"single"};
+   std::string fakeFileName;      ///<FITS file containing the fake planet PSF to inject
    std::string fakeScaleFileName; ///< One-column text file containing a scale factor for each point in time.
    
    std::vector<realT> fakeSep; ///< Separation(s) of the fake planet(s)
@@ -68,9 +81,10 @@ protected:
    std::vector<std::string> coaddKeywords;
    
    //Masking
-   std::string maskFile;
+   std::string m_maskFile;
    
    //Pre-processing
+   std::string m_meanSubMethod;
    bool preProcess_beforeCoadd;
    bool preProcess_mask;
    bool preProcess_subradprof;
@@ -142,13 +156,10 @@ public:
       thresholdOnly = false;
    
       MJDisISO8601 = true;
-      imSize = 0;
 
       angleScale = 0;
       angleConstant = 0;
    
-      fakeMethod = 0;
-     
       coaddMaxImno = 0;
       coaddMaxTime = 0;
    
@@ -197,74 +208,119 @@ public:
    //This sets up the configuration
    void setupConfig()
    {
+      /*>>>> input */
+      config.add("input.directory","D", "input.directory",argType::Required, "input", "directory", false, "string", "Directory to search for files");
+      config.add("input.prefix",   "P", "input.prefix",   argType::Required, "input", "prefix",    false, "string", "Prefix of the files");
+      config.add("input.extension","E", "input.extension",argType::Required, "input", "extension", false, "string", "Extension of the files, default is .fits");
+      config.add("input.fileList", "F", "input.fileList", argType::Required, "input", "fileList",  false, "string", "");
+      
+      config.add("input.deleteFront","", "input.deleteFront",argType::Required, "input", "deleteFront", false, "int", "The number of files to delete from the front of the list.  Default is 0.");
+      config.add("input.deleteBack","", "input.deleteBack",argType::Required,   "input", "deleteBack",  false, "int", "The number of files to delete from the back of the list.  Default is 0.");
 
-      config.add("directory","D", "directory",argType::Required, "", "directory", false, "string", "Directory to search for files");
-      config.add("prefix","P", "prefix",argType::Required, "", "prefix", false, "string", "Prefix of the files");
-      config.add("extension","E", "extension",argType::Required, "", "extension", false, "string", "");
-      config.add("fileList","F", "fileList",argType::Required, "", "fileList", false, "string", "");
+      config.add("input.qualityFile","", "input.qualityFile",argType::Required,           "input", "qualityFile", false, "string", "The path to the file containing image quality, a list of numbers with an entry for each image.");
+      config.add("input.qualityThreshold","", "input.qualityThreshold",argType::Required, "input", "qualityThreshold", false, "", "The quality threshold to apply.");
+      config.add("input.thresholdOnly","", "input.thresholdOnly",argType::True,           "input", "thresholdOnly", false, "bool", "Perform thresholding only, and report the results.");
       
-      config.add("deleteFront","", "deleteFront",argType::Required, "", "deleteFront", false, "int", "");
-      config.add("deleteBack","", "deleteBack",argType::Required, "", "deleteBack", false, "int", "");
+      config.add("input.angleKeyword","", "input.angleKeyword",argType::Required,   "input", "angleKeyword", false, "string", "The header keyword to use for the rotation angle of each image.");
+      config.add("input.angleScale","", "input.angleScale",argType::Required,       "input", "angleScale",   false, "float",  "The scale to apply to the angle, default is 1.");
+      config.add("input.angleConstant","", "input.angleConstant",argType::Required, "input", "angleConstant", false, "float", "The offset to apply to each angle (e.g. the North angle), default is 0.");
+      
+      config.add("input.MJDKeyword","", "input.MJDKeyword",argType::Required, "input", "MJDKeyword", false, "string", "The header keyword specifying the MJD.");
+      config.add("input.MJDisISO8601","", "input.MJDisISO8601",argType::True, "input", "MJDisISO8601", false, "bool", "Whether or not the MJD is in ISO 8601 format.");
 
-      config.add("qualityFile","", "qualityFile",argType::Required, "", "qualityFile", false, "string", "");
-      config.add("qualityThreshold","", "qualityThreshold",argType::Required, "", "qualityThreshold", false, "", "");
-      config.add("thresholdOnly","", "thresholdOnly",argType::True, "", "thresholdOnly", false, "bool", "");
-      
-      config.add("angleKeyword","", "angleKeyword",argType::Required, "", "angleKeyword", false, "string", "");
-      config.add("angleScale","", "angleScale",argType::Required, "", "angleScale", false, "", "");
-      config.add("angleConstant","", "angleConstant",argType::Required, "", "angleConstant", false, "", "");
-      
-      config.add("MJDKeyword","", "MJDKeyword",argType::Required, "", "MJDKeyword", false, "string", "");
-      config.add("MJDisISO8601","", "MJDisISO8601",argType::True, "", "MJDisISO8601", false, "", "");
-      config.add("imSize","S", "imSize",argType::Required, "", "imSize", false, "", "");
+      config.add("input.imSize","S", "input.imSize",argType::Required, "input", "imSize", false, "int", "The max size to read in from the images.  Default is 0, which means read the whole image.");
    
-      config.add("fakeMethod", "",  "fakeMethod",   argType::Required, "", "fakeMethod", false, "string", "");
+      config.add("input.maskFile","", "input.maskFile",argType::Required, "input", "maskFile", false, "string", "Path to a file containing a 1/0 mask.  0 pixels are excluded from the search regions.");
       
-      config.add("fakeFileName","", "fakeFileName",argType::Required, "", "fakeFileName", false, "string", "");
-      config.add("fakeScaleFileName","", "fakeScaleFileName",argType::Required, "", "fakeScaleFileName", false, "string", "");
-      config.add("fakeSep","", "fakeSep",argType::Required, "", "fakeSep", false, "", "");
-      config.add("fakePA","", "fakePA",argType::Required, "", "fakePA", false, "", "");
-      config.add("fakeContrast","", "fakeContrast",argType::Required, "", "fakeContrast", false, "", "");
+      /*<<<< input */
       
-      config.add("coaddMethod","", "coaddMethod",argType::Required, "", "coaddMethod", false, "string", "");
-      config.add("coaddMaxImno","", "coaddMaxImno",argType::Required, "", "coaddMaxImno", false, "int", "");
-      config.add("coaddMaxTime","", "coaddMaxTime",argType::Required, "", "coaddMaxTime", false, "float", "");
-      config.add("coaddKeywords","", "coaddKeywords",argType::Required, "", "coaddKeywords", false, "vector<string>", "");
+      /*>>>> rdi */
+      //RDI setup
+      config.add("rdi.directory","", "rdi.directory",argType::Required, "rdi", "directory", false, "string", "Directory to search for RDI files");
+      config.add("rdi.prefix",   "", "rdi.prefix",   argType::Required, "rdi", "prefix",    false, "string", "Prefix of the RDI files");
+      config.add("rdi.extension","", "rdi.extension",argType::Required, "rdi", "extension", false, "string", "Extension of the files, default is .fits");
+      config.add("rdi.fileList", "", "rdi.fileList", argType::Required, "rdi", "fileList",  false, "string", "Path to file containing a list of RDI files");
+      
+      config.add("rdi.deleteFront","", "rdi.deleteFront",argType::Required, "rdi", "deleteFront", false, "int", "The number of files to delete from the front of the RDI file list.  Default is 0.");
+      config.add("rdi.deleteBack","", "rdi.deleteBack",argType::Required,   "rdi", "deleteBack",  false, "int", "The number of files to delete from the back of the RDI file list.  Default is 0.");
 
-      config.add("maskFile","", "maskFile",argType::Required, "", "maskFile", false, "string", "");
+      config.add("rdi.qualityFile","", "rdi.qualityFile",argType::Required,           "rdi", "qualityFile", false, "string", "The path to the file containing image quality for the RDI images, a list of numbers with an entry for each image.");
+      config.add("rdi.qualityThreshold","", "rdi.qualityThreshold",argType::Required, "rdi", "qualityThreshold", false, "", "The quality threshold to apply to the RDI images.");
       
-      config.add("preProcess_beforeCoadd","", "preProcess_beforeCoadd",argType::True, "", "preProcess_beforeCoadd", false, "", "");
-      config.add("preProcess_mask","", "preProcess_mask",argType::True, "", "preProcess_mask", false, "string", "");
-      config.add("preProcess_subradprof","", "preProcess_subradprof",argType::True, "", "preProcess_subradprof", false, "", "");
-      config.add("preProcess_azUSM_azW","", "preProcess_azUSM_azW",argType::Required, "", "preProcess_azUSM_azW", false, "", "");
-      config.add("preProcess_azUSM_radW","", "preProcess_azUSM_radW",argType::Required, "", "preProcess_azUSM_radW", false, "", "");
-      config.add("preProcess_gaussUSM_fwhm","", "preProcess_gaussUSM_fwhm",argType::Required, "", "preProcess_gaussUSM_fwhm", false, "", "");
-      config.add("preProcess_outputPrefix","", "preProcess_outputPrefix",argType::Required, "", "preProcess_outputPrefix", false, "", "");
-      config.add("preProcess_only","", "preProcess_only",argType::True, "", "preProcess_only", false, "", "");
-      config.add("skipPreProcess","", "skipPreProcess",argType::True, "", "skipPreProcess", false, "", "");
+      /*<<<< rdi */
+            
+      /*>>>> coadd */
       
-      config.add("minDPx","", "minDPx",argType::Required, "", "minDPx", false, "float", "Specify the minimum angle or pixel difference at the inner edge of the search region");
-      config.add("maxDPx","", "maxDPx",argType::Required, "", "maxDPx", false, "float", "Specify the maximum angle or pixel difference at the inner edge of the search region");
-      config.add("excludeMethod","", "excludeMethod",argType::Required, "", "excludeMethod", false, "string", "Method for minimum exclusion.  Values are none (default), pixel, angle, imno.");
-      config.add("excludeMethodMax","", "excludeMethodMax",argType::Required, "", "excludeMethodMax", false, "string", "Method for maximum exclusion.  Values are none (default), pixel, angle, imno.");
-      config.add("includeRefNum","", "includeRefNum",argType::Required, "", "includeRefNum", false, "", "");
-      config.add("Nmodes","", "Nmodes",argType::Required, "", "Nmodes", false, "", "");
-      config.add("minRadius","", "minRadius",argType::Required, "", "minRadius", false, "", "");
-      config.add("maxRadius","", "maxRadius",argType::Required, "", "maxRadius", false, "", "");
+      config.add("coadd.method","", "coadd.method",argType::Required,     "coadd", "method", false, "string", "");
+      config.add("coadd.maxImno","", "coadd.maxImno",argType::Required,   "coadd", "maxImno", false, "int", "");
+      config.add("coadd.maxTime","", "coadd.maxTime",argType::Required,   "coadd", "maxTime", false, "float", "");
+      config.add("coadd.keywords","", "coadd.keywords",argType::Required, "coadd", "keywords", false, "vector<string>", "");
+
+      /*<<<< coadd */
       
-      config.add("noDerotate","", "noDerotate",argType::True, "", "noDerotate", false, "bool", "Do not derotate before combining.");
+      /*>>>> preProcess */
       
-      config.add("combineMethod",  "", "combineMethod",  argType::Required, "", "combineMethod",  false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
-      config.add("weightFile",     "", "weightFile",     argType::Required, "", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
-      config.add("sigmaThreshold", "", "sigmaThreshold", argType::Required, "", "sigmaThreshold", false, "float" , "Clipping threshold for sigma clipped mean combination.");
-      config.add("minGoodFract", "", "minGoodFract", argType::Required, "", "minGoodFract", false, "float" , "Minimum fraction of good/un-masked pixels to include in final image, otherwise pixel is NaN-ed.");
+      config.add("preProcess.beforeCoadd","",   "preProcess.beforeCoadd", argType::True,       "preProcess", "beforeCoadd", false, "bool", "Controls whether pre-processing takes place before (true) or after (false, default) coadding.");
+      config.add("preProcess.mask","",          "preProcess.mask", argType::True,              "preProcess", "mask", false, "string", "Determines if mask is applied for pre-processing.");
+      config.add("preProcess.subradprof","",    "preProcess.subradprof", argType::True,        "preProcess", "subradprof", false, "bool", "If true, the radial profile is subtracted from each image.");
+      config.add("preProcess.azUSM_azW","",     "preProcess.azUSM_azW", argType::Required,     "preProcess", "azUSM_azW", false, "float", "The azimuth USM boxcar azimuthal width in pixels.  Enabled if both azW and radW are non-zero.");
+      config.add("preProcess.azUSM_radW","",    "preProcess.azUSM_radW", argType::Required,    "preProcess", "azUSM_radW", false, "float", "The azimuth USM boxcar radial width in pixels.  Enabled if both azW and radW are non-zero.");
+      config.add("preProcess.gaussUSM_fwhm","", "preProcess.gaussUSM_fwhm", argType::Required, "preProcess", "gaussUSM_fwhm", false, "float", "The gaussian USM kernel full-width at half max.  Enabled if non-zero.");
+      config.add("preProcess.outputPrefix","",  "preProcess.outputPrefix", argType::Required,  "preProcess", "outputPrefix", false, "string", "If not empty, then this prefix (which should be a full path) is added to file names and the pre-processed images are output");
+      config.add("preProcess.only","",          "preProcess.only", argType::True,              "preProcess", "only", false, "bool", "If true, stop after pre-processing.  Default is false.");
+      config.add("preProcess.skip","",          "preProcess.skip", argType::True,              "preProcess", "skip", false, "bool", "If true, then pre-processing is skipped.  Default is false.");
       
-      config.add("outputFile",     "", "outputFile",     argType::Required, "", "outputFile",     false, "string", "Prefix for output file name.  A 4 digit 0-padded number is appended.");
-      config.add("exactFName",     "", "exactFName",     argType::True,     "", "exactFName",     false, "bool"  , "Used outputFile exactly as specified, without appending a number or .fits");
-      config.add("outputDir",      "", "outputDir",      argType::Required, "", "outputDir",      false, "string", "The directory where to output files.");
+      /*<<<< preProcess */
       
-      config.add("outputPSFSub",      "", "outputPSFSub",      argType::True,     ""    , "outputPSFSub", false, "bool"  , "Output the PSF subtracted images (default false)");
-      config.add("psfSubPrefix",      "", "psfSubPrefix",      argType::Required, ""    , "psfSubPrefix", false, "string", "Prefix of the PSF subtracted output files.");
+      /*>>>> adi */
+      
+      config.add("adi.minDPx","", "adi.minDPx",argType::Required, "adi", "minDPx", false, "float", "Specify the minimum angle or pixel difference at the inner edge of the search region");
+      config.add("adi.maxDPx","", "adi.maxDPx",argType::Required, "adi", "maxDPx", false, "float", "Specify the maximum angle or pixel difference at the inner edge of the search region");
+      config.add("adi.excludeMethod","", "adi.excludeMethod",argType::Required, "adi", "excludeMethod", false, "string", "Method for minimum exclusion.  Values are none (default), pixel, angle, imno.");
+      config.add("adi.excludeMethodMax","", "adi.excludeMethodMax",argType::Required, "adi", "excludeMethodMax", false, "string", "Method for maximum exclusion.  Values are none (default), pixel, angle, imno.");
+      /*<<<< adi */
+      
+      /*>>>> geom */
+      config.add("geom.minRadius","", "geom.minRadius",argType::Required, "geom", "minRadius", false, "", "The minimum radius of the search region");
+      config.add("geom.maxRadius","", "geom.maxRadius",argType::Required, "geom", "maxRadius", false, "", "The maximum radius of the search region");
+      /*<<<< geom */
+
+      /*>>>> klip */
+      config.add("klip.meanSubMethod","", "klip.meanSubMethod",argType::Required, "klip", "meanSubMethod", false, "int", "The method of mean subtraction for PCA: imageMean, imageMedian, meanImage, or medianImage.");      
+      config.add("klip.includeRefNum","", "klip.includeRefNum",argType::Required, "klip", "includeRefNum", false, "int", "The number of references to include, based on correlation.");      
+      config.add("klip.Nmodes","",        "klip.Nmodes",argType::Required, "klip", "Nmodes", false, "vector<int>", "The number of modes to included in the PSF estimate.");
+
+      /*<<<< klip */
+  
+
+      /*>>>> combine */
+      config.add("combine.noDerotate","", "noDerotate",argType::True, "", "noDerotate", false, "bool", "Do not derotate before combining.");
+      
+      config.add("combine.method",         "", "combine.method",  argType::Required,        "combine", "method",         false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
+      config.add("combine.weightFile",     "", "combine.weightFile",     argType::Required, "combine", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
+      config.add("combine.sigmaThreshold", "", "combine.sigmaThreshold", argType::Required, "combine", "sigmaThreshold", false, "float" , "Clipping threshold for sigma clipped mean combination.");
+      config.add("combine.minGoodFract",   "", "combine.minGoodFract", argType::Required,   "combine", "minGoodFract",   false, "float" , "Minimum fraction of good/un-masked pixels to include in final image, otherwise pixel is NaN-ed.");
+
+      /*<<<< combine */
+      
+      /*>>>> output */
+      config.add("output.fileName" ,    "", "output.fileName",     argType::Required, "output", "fileName",     false, "string", "Prefix for output file name.  A 4 digit 0-padded number is appended.");
+      config.add("output.exactFName",   "", "output.exactFName",   argType::True,     "output", "exactFName",   false, "bool"  , "Used outputFile exactly as specified, without appending a number or .fits");
+      config.add("output.directory",    "", "output.directory",    argType::Required, "output", "directory",    false, "string", "The directory where to output files.");
+      config.add("output.outputPSFSub", "", "output.outputPSFSub", argType::True,     "output", "outputPSFSub", false, "bool"  , "Output the PSF subtracted images (default false)");
+      config.add("output.psfSubPrefix", "", "output.psfSubPrefix", argType::Required, "output", "psfSubPrefix", false, "string", "Prefix of the PSF subtracted output files.");
+      /*<<<< output */
+      
+      /*>>>> fake */
+      config.add("fake.method",       "", "fake.method",        argType::Required, "fake", "method",        false, "string", "How the fake PSF is specified by fileName: single, if a single PSF is used (default); or list, if 1 PSF per miage is used.");
+      config.add("fake.fileName",     "", "fake.fileName",      argType::Required, "fake", "fileName",      false, "string", "Full path to FITS file containing the fake planet PSF to inject, or a file with a list of FITS file paths.");
+      config.add("fake.scaleFileName","", "fake.scaleFileName", argType::Required, "fake", "scaleFileName", false, "string", "Path to one-column text file containing a scale factor for each point in time.");
+      config.add("fake.sep",          "", "fake.sep",           argType::Required, "fake", "sep",           false, "vector<float>", "Separation(s) of the fake planet(s) in pixels.");
+      config.add("fake.PA",           "", "fake.PA",            argType::Required, "fake", "PA",            false, "vector<float>", "Position angles(s) of the fake planet(s)");
+      config.add("fake.contrast",     "", "fake.contrast",      argType::Required, "fake", "contrast",      false, "vector<float>", "Contrast(s) of the fake planet(s)");
+      
+       /*<<<< fake */
+      
       
       config.add("mode",              "", "mode",              argType::Required, ""    , "mode",         false, "string", "The mode of operation: either \"grid\" or \"normal\" (the default)");
       config.add("grid.centerSep",    "", "grid.centerSep",    argType::Required, "grid", "centerSep",    false, "float" , "The grid center in separation [pixels]" );
@@ -273,7 +329,7 @@ public:
       config.add("grid.dalfWidthPA",  "", "grid.halfWidthPA",  argType::Required, "grid", "halfWidthPA",  false, "float" , "The half width of the grid in PA [degrees]" );
       config.add("grid.deltaSep",     "", "grid.deltaSep",     argType::Required, "grid", "deltaSep",     false, "float" , "The grid step size in separation [pixels]" );
       config.add("grid.celtaPA",      "", "grid.deltaPA",      argType::Required, "grid", "deltaPA",      false, "float" , "The grid step size in PA [degrees]" );
-      config.add("grid.contrasts",    "", "grid.contrasts",    argType::Required, "grid", "contrasts",    false, "vector float" , "The contrast grid [planet:star]." );
+      config.add("grid.contrasts",    "", "grid.contrasts",    argType::Required, "grid", "contrasts",    false, "vector<float>" , "The contrast grid [planet:star]." );
       //config.add("","", "",argType::Required, "", ""));
       
    }
@@ -285,78 +341,121 @@ public:
    
    void loadConfig()
    { 
-      config(directory, "directory");
-      config(prefix, "prefix");
-      config(extension, "extension");
-      config(fileList, "fileList");
+      /*>>>> input */
+      config(directory, "input.directory");
+      config(prefix, "input.prefix");
+      config(extension, "input.extension");
       
-      config(deleteFront, "deleteFront");
-      config(deleteBack, "deleteBack");
-      config(qualityFile, "qualityFile");
-      config(qualityThreshold, "qualityThreshold");
-      config(thresholdOnly, "thresholdOnly");
+      config(fileList, "input.fileList");
+      
+      config(deleteFront, "input.deleteFront");
+      config(deleteBack, "input.deleteBack");
+      
+      config(qualityFile, "input.qualityFile");
+      config(qualityThreshold, "input.qualityThreshold");
+      config(thresholdOnly, "input.thresholdOnly");
             
-      config(angleKeyword, "angleKeyword");
-      config(angleScale,"angleScale");
-      config(angleConstant, "angleConstant");
+      config(angleKeyword, "input.angleKeyword");
+      config(angleScale,"input.angleScale");
+      config(angleConstant, "input.angleConstant");
       
-      config(MJDKeyword, "MJDKeyword");
-      config(MJDisISO8601, "MJDisISO8601");
-      config(imSize, "imSize");
+      config(MJDKeyword, "input.MJDKeyword");
+      config(MJDisISO8601, "input.MJDisISO8601");
       
-      config(fakeMethod, "fakeMethod");
-      config(fakeFileName, "fakeFileName");
-      config(fakeScaleFileName, "fakeScaleFileName");
+      config(m_imSize, "input.imSize");
+
+      config(m_maskFile, "input.maskFile");
       
-      config(fakeSep, "fakeSep");
-      config(fakePA, "fakePA");
-      config(fakeContrast, "fakeContrast");
+      /*<<<< input */
       
-      config(coaddMethod, "coaddMethod");
-      config(coaddMaxImno, "coaddMaxImno");
-      config(coaddMaxTime, "coaddMaxTime");
-      config(coaddKeywords, "coaddKeywords");
       
-      config(maskFile, "maskFile");
+      /*>>>> RDI */
+      config(m_RDIdirectory, "rdi.directory");
+      config(m_RDIprefix, "rdi.prefix");
+      config(m_RDIextension, "rdi.extension");
       
-      config(preProcess_beforeCoadd, "preProcess_beforeCoadd");
-      config(preProcess_mask, "preProcess_mask");
+      std::cerr << "RDI: " << m_RDIdirectory << " " << m_RDIprefix << "\n";
+      config(m_RDIfileList, "rdi.fileList");
       
-      config(preProcess_subradprof, "preProcess_subradprof");
-      config(preProcess_azUSM_azW, "preProcess_azUSM_azW");
-      config(preProcess_azUSM_radW, "preProcess_azUSM_radW");
-      config(preProcess_gaussUSM_fwhm, "preProcess_gaussUSM_fwhm");
-      config(preProcess_outputPrefix, "preProcess_outputPrefix");
-      config(preProcess_only, "preProcess_only");
-      config(skipPreProcess, "skipPreProcess");
+      config(m_RDIdeleteFront, "rdi.deleteFront");
+      config(m_RDIdeleteBack, "rdi.deleteBack");
       
-      config(minDPx, "minDPx");
-      config(maxDPx, "maxDPx");
-      config(excludeMethod, "excludeMethod");
-      config(excludeMethodMax, "excludeMethodMax");
-      config(includeRefNum, "includeRefNum");
+      config(m_RDIqualityFile, "rdi.qualityFile");
+      config(m_RDIqualityThreshold, "rdi.qualityThreshold");
+      /*<<<< RDI */
       
-      config(Nmodes, "Nmodes");
+      /*>>>> coadd */
+      config(coaddMethod, "coadd.method");
+      config(coaddMaxImno, "coadd.maxImno");
+      config(coaddMaxTime, "coadd.maxTime");
+      config(coaddKeywords, "coadd.keywords");
+      /*<<<< coadd */
       
-      config(minRadius, "minRadius");
-      config(maxRadius, "maxRadius");
+      /*>>>> preProcess */
+      config(preProcess_beforeCoadd, "preProcess.beforeCoadd");
+      config(preProcess_mask, "preProcess.mask");
+      config(preProcess_subradprof, "preProcess.subradprof");
+      config(preProcess_azUSM_azW, "preProcess.azUSM_azW");
+      config(preProcess_azUSM_radW, "preProcess.azUSM_radW");
+      config(preProcess_gaussUSM_fwhm, "preProcess.gaussUSM_fwhm");
+      config(preProcess_outputPrefix, "preProcess.outputPrefix");
+      config(preProcess_only, "preProcess.only");
+      config(skipPreProcess, "preProcess.skip");
+      /*<<<< preProcess */
       
-      config(noDerotate, "noDerotate");
+      /*>>>> adi */
+      config(minDPx, "adi.minDPx");
+      config(maxDPx, "adi.maxDPx");
+      config(excludeMethod, "adi.excludeMethod");
+      config(excludeMethodMax, "adi.excludeMethodMax");
+      /*<<<< adi */
       
-      config(combineMethod, "combineMethod");
+      /*>>>> geom */
+      config(minRadius, "geom.minRadius");
+      config(maxRadius, "geom.maxRadius");
+      /*<<<< geom */
       
-      config(weightFile, "weightFile");
+      /*>>>> klip */
+      config(m_meanSubMethod, "klip.meanSubMethod");
+      config(includeRefNum, "klip.includeRefNum");
+      config(Nmodes, "klip.Nmodes");
       
-      config(sigmaThreshold, "sigmaThreshold");
-      config(minGoodFract, "minGoodFract");
+      /*<<<< klip */
       
-      config(outputFile, "outputFile");
-      config(exactFName, "exactFName");
+      /*>>>> combine */
       
-      config(outputDir, "outputDir");
+      config(noDerotate, "combine.noDerotate");
       
-      config(outputPSFSub, "outputPSFSub");
-      config(psfSubPrefix, "psfSubPrefix");
+      config(combineMethod, "combine.method");
+      
+      config(weightFile, "combine.weightFile");
+      
+      config(sigmaThreshold, "combine.sigmaThreshold");
+      config(minGoodFract, "combine.minGoodFract");
+      
+      /*<<<< combine */
+      
+      /*>>>> output */
+      config(outputFile, "output.fileName");
+      config(exactFName, "output.exactFName");
+      config(outputDir, "output.directory");
+      config(outputPSFSub, "output.outputPSFSub");
+      config(psfSubPrefix, "output.psfSubPrefix");
+      /*<<<< output */
+      
+      /*>>>> fake */
+      config(fakeMethod,        "fake.method");
+      config(fakeFileName,      "fake.fileName");
+      config(fakeScaleFileName, "fake.scaleFileName");
+      config(fakeSep,           "fake.sep");
+      config(fakePA,            "fake.PA");
+      config(fakeContrast,      "fake.contrast");
+      /*<<<< fake */
+      
+      
+      
+      
+      
       
       
       config(gridCenterSep,"grid.centerSep"); 
@@ -416,49 +515,86 @@ public:
          
          if(fileList != "")
          {
-            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(fileList);
+            if(m_RDIfileList != "")
+            {
+               obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(fileList, m_RDIfileList);
+            }
+            else
+            {
+               obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(fileList);
+            }
          }
          else
          {
-            obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension);
+            if(m_RDIdirectory != "" && m_RDIprefix != "")
+            {
+               std::cerr << "6\n";
+               obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension, m_RDIdirectory, m_RDIprefix, m_RDIextension);
+            }
+            else
+            {
+               std::cerr << "3\n";
+               obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension);
+            }
          } 
       }
       
-      obs->deleteFront = deleteFront;
-      obs->deleteBack = deleteBack;
-      if(qualityFile != "") obs->qualityFile = qualityFile;
-      obs->qualityThreshold = qualityThreshold;
-      obs->thresholdOnly = thresholdOnly;
+      obs->m_deleteFront = deleteFront;
+      obs->m_deleteBack = deleteBack;
+      if(qualityFile != "") obs->m_qualityFile = qualityFile;
+      obs->m_qualityThreshold = qualityThreshold;
+      obs->m_thresholdOnly = thresholdOnly;
       
-      obs->derotF.angleKeyword(angleKeyword);
-      obs->derotF.angleScale = angleScale;
-      obs->derotF.angleConstant = angleConstant;
+      obs->m_derotF.angleKeyword(angleKeyword);
+      obs->m_derotF.m_angleScale = angleScale;
+      obs->m_derotF.m_angleConstant = angleConstant;
       
-      if(MJDKeyword != "") obs->MJDKeyword = MJDKeyword;
-      obs->MJDisISO8601 = MJDisISO8601;
-      obs->imSize = imSize;
+      obs->m_RDIderotF.angleKeyword(angleKeyword);
+      obs->m_RDIderotF.m_angleScale = angleScale;
+      obs->m_RDIderotF.m_angleConstant = angleConstant;
       
-      obs->fakeMethod = fakeMethod;
-
-      obs->fakeFileName = fakeFileName;
-      obs->fakeScaleFileName = fakeScaleFileName;
-      obs->fakeSep = fakeSep;
-      obs->fakePA = fakePA;
-      obs->fakeContrast = fakeContrast;
+      if(MJDKeyword != "") obs->m_MJDKeyword = MJDKeyword;
+      obs->m_MJDisISO8601 = MJDisISO8601;
+      obs->m_imSize = m_imSize;
+      
+      
+      obs->m_RDIdeleteFront = m_RDIdeleteFront;
+      obs->m_RDIdeleteBack = m_RDIdeleteBack;
+      obs->m_RDIqualityFile = m_RDIqualityFile;
+      obs->m_RDIqualityThreshold = m_RDIqualityThreshold;
+      
+      
+      
+      
+      
+      if(fakeMethod == "list")
+      {
+         obs->m_fakeMethod = mx::improc::HCI::list;
+      }
+      else
+      {
+         obs->m_fakeMethod = mx::improc::HCI::single;
+      }
+      
+      obs->m_fakeFileName = fakeFileName;
+      obs->m_fakeScaleFileName = fakeScaleFileName;
+      obs->m_fakeSep = fakeSep;
+      obs->m_fakePA = fakePA;
+      obs->m_fakeContrast = fakeContrast;
       
       if(coaddMethod != "")
       {
          if(coaddMethod == "none")
          {
-            obs->coaddCombineMethod = mx::improc::HCI::noCombine;
+            obs->m_coaddCombineMethod = mx::improc::HCI::noCombine;
          }
          else if(coaddMethod == "median")
          {
-            obs->coaddCombineMethod = mx::improc::HCI::medianCombine;
+            obs->m_coaddCombineMethod = mx::improc::HCI::medianCombine;
          }
          else if(coaddMethod == "mean")
          {
-            obs->coaddCombineMethod = mx::improc::HCI::meanCombine;
+            obs->m_coaddCombineMethod = mx::improc::HCI::meanCombine;
          }
          else
          {
@@ -467,21 +603,21 @@ public:
          }
       }
 
-      obs->coaddMaxImno = coaddMaxImno;
-      obs->coaddMaxTime = coaddMaxTime;
-      obs->coaddKeywords = coaddKeywords;
+      obs->m_coaddMaxImno = coaddMaxImno;
+      obs->m_coaddMaxTime = coaddMaxTime;
+      obs->m_coaddKeywords = coaddKeywords;
       
-      obs->maskFile = maskFile;
+      obs->m_maskFile = m_maskFile;
       
-      obs->preProcess_beforeCoadd = preProcess_beforeCoadd;
-      obs->preProcess_mask = preProcess_mask;
-      obs->preProcess_subradprof = preProcess_subradprof;
-      obs->preProcess_azUSM_azW = preProcess_azUSM_azW;
-      obs->preProcess_azUSM_radW = preProcess_azUSM_radW;
-      obs->preProcess_gaussUSM_fwhm = preProcess_gaussUSM_fwhm;
-      obs->preProcess_outputPrefix = preProcess_outputPrefix;      
-      obs->preProcess_only = preProcess_only;
-      obs->skipPreProcess = skipPreProcess;
+      obs->m_preProcess_beforeCoadd = preProcess_beforeCoadd;
+      obs->m_preProcess_mask = preProcess_mask;
+      obs->m_preProcess_subradprof = preProcess_subradprof;
+      obs->m_preProcess_azUSM_azW = preProcess_azUSM_azW;
+      obs->m_preProcess_azUSM_radW = preProcess_azUSM_radW;
+      obs->m_preProcess_gaussUSM_fwhm = preProcess_gaussUSM_fwhm;
+      obs->m_preProcess_outputPrefix = preProcess_outputPrefix;      
+      obs->m_preProcess_only = preProcess_only;
+      obs->m_skipPreProcess = skipPreProcess;
       
       obs->m_minDPx = minDPx;
       obs->m_maxDPx = maxDPx;
@@ -537,7 +673,30 @@ public:
       }
       
       
-      
+      if(m_meanSubMethod != "")
+      {
+         if(m_meanSubMethod == "imageMean")
+         {
+            obs->m_meanSubMethod = mx::improc::HCI::imageMean;
+         }
+         else if(m_meanSubMethod == "imageMedian")
+         {
+            obs->m_meanSubMethod = mx::improc::HCI::imageMedian;
+         }
+         else if(m_meanSubMethod == "meanImage")
+         {
+            obs->m_meanSubMethod = mx::improc::HCI::meanImage;
+         }
+         else if(m_meanSubMethod == "medianImage")
+         {
+            obs->m_meanSubMethod = mx::improc::HCI::medianImage;
+         }
+         else
+         {
+            std::cerr << invokedName << ": invalid klip.meanSubMethod.\n";
+            rv = -1;
+         }
+      }
       
       obs->m_includeRefNum = includeRefNum;
       if(Nmodes.size() == 0)
@@ -559,25 +718,25 @@ public:
          rv = -1;
       }
       
-      obs->doDerotate = !noDerotate;
+      obs->m_doDerotate = !noDerotate;
       
       if(combineMethod != "")
       {
          if(combineMethod == "none")
          {
-            obs->combineMethod = mx::improc::HCI::noCombine;
+            obs->m_combineMethod = mx::improc::HCI::noCombine;
          }
          else if(combineMethod == "median")
          {
-            obs->combineMethod = mx::improc::HCI::medianCombine;
+            obs->m_combineMethod = mx::improc::HCI::medianCombine;
          }
          else if(combineMethod == "mean")
          {
-            obs->combineMethod = mx::improc::HCI::meanCombine;
+            obs->m_combineMethod = mx::improc::HCI::meanCombine;
          }
          else if(combineMethod == "sigma")
          {
-            obs->combineMethod = mx::improc::HCI::sigmaMeanCombine;
+            obs->m_combineMethod = mx::improc::HCI::sigmaMeanCombine;
          }
          else
          {
@@ -586,25 +745,25 @@ public:
          }
       }
       
-      obs->weightFile = weightFile;
-      obs->sigmaThreshold = sigmaThreshold;
+      obs->m_weightFile = weightFile;
+      obs->m_sigmaThreshold = sigmaThreshold;
       obs->m_minGoodFract = minGoodFract;
       
       if(outputFile != "")
       {
-         obs->finimName = outputFile;
+         obs->m_finimName = outputFile;
       }
       
-      obs->exactFinimName = exactFName;
+      obs->m_exactFinimName = exactFName;
       
       
-      obs->outputDir = outputDir;
+      obs->m_outputDir = outputDir;
      
       
-      obs->doOutputPSFSub = outputPSFSub;
+      obs->m_doOutputPSFSub = outputPSFSub;
       if(psfSubPrefix != "")
       {
-         obs->PSFSubPrefix = psfSubPrefix;
+         obs->m_PSFSubPrefix = psfSubPrefix;
       }
       
       
@@ -735,11 +894,11 @@ int klipReduce<realT, evCalcT>::doGrid()
          
          for(size_t k =0; k< gridContrasts.size(); ++k)
          {
-            obs->filesRead = false;
+            obs->m_filesRead = false;
             
-            obs->fakeSep = {sep(i,j)};
-            obs->fakePA = {pa(i,j)};
-            obs->fakeContrast = {gridContrasts[k]};
+            obs->m_fakeSep = {sep(i,j)};
+            obs->m_fakePA = {pa(i,j)};
+            obs->m_fakeContrast = {gridContrasts[k]};
             
             //std::cerr << sep(i,j) << " " << pa(i,j) << " " << gridContrasts[k] << "\n";
             std::vector<realT> minMaxQ(minRadius.size(), 0);
@@ -755,17 +914,17 @@ int klipReduce<realT, evCalcT>::doGrid()
    
    std::string fn;
    fn = "gridSep.fits";
-   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   if(obs->m_outputDir != "") fn = outputDir + "/" + fn;
    
    ff.write(fn, sep);
    
    
    fn = "gridPA.fits";
-   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   if(obs->m_outputDir != "") fn = outputDir + "/" + fn;
    ff.write(fn, pa);
    
    fn = "gridContrasts.dat";
-   if(obs->outputDir != "") fn = outputDir + "/" + fn;
+   if(obs->m_outputDir != "") fn = outputDir + "/" + fn;
    std::ofstream fout;
    fout.open(fn);
    for(size_t i=0; i< gridContrasts.size(); ++i) fout << gridContrasts[i] << "\n";
