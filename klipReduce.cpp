@@ -294,7 +294,7 @@ public:
   
 
       /*>>>> combine */
-      config.add("combine.noDerotate","", "combine.noDerotate",argType::True, "", "combine.noDerotate", false, "bool", "Do not derotate before combining.");
+      config.add("combine.noDerotate","", "combine.noDerotate",argType::True, "combine", "noDerotate", false, "bool", "Do not derotate before combining.");
       
       config.add("combine.method",         "", "combine.method",  argType::Required,        "combine", "method",         false, "string", "Averaging method for final combination: mean, median, weighted, sigma");
       config.add("combine.weightFile",     "", "combine.weightFile",     argType::Required, "combine", "weightFile",     false, "string", "File containing weights for the weighted combo.  Two column format: filename weight");
