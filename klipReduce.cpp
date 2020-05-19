@@ -73,7 +73,9 @@ protected:
    std::vector<realT> fakeSep; ///< Separation(s) of the fake planet(s)
    std::vector<realT> fakePA; ///< Position angles(s) of the fake planet(s)
    std::vector<realT> fakeContrast; ///< Contrast(s) of the fake planet(s)
-     
+   realT m_fakeRDIFluxScale {1};
+   realT m_fakeRDISepScale {1};
+   
    //Co-adding
    std::string coaddMethod;
    int coaddMaxImno;
@@ -318,6 +320,8 @@ public:
       config.add("fake.sep",          "", "fake.sep",           argType::Required, "fake", "sep",           false, "vector<float>", "Separation(s) of the fake planet(s) in pixels.");
       config.add("fake.PA",           "", "fake.PA",            argType::Required, "fake", "PA",            false, "vector<float>", "Position angles(s) of the fake planet(s)");
       config.add("fake.contrast",     "", "fake.contrast",      argType::Required, "fake", "contrast",      false, "vector<float>", "Contrast(s) of the fake planet(s)");
+      config.add("fake.RDIFluxScale", "", "fake.RDIFluxScale",  argType::Required, "fake", "RDIFluxScale",  false, "vector<float>", "Flux scaling for the planets injected into the RDI images");
+      config.add("fake.RDISepScale",  "", "fake.RDISepScale",   argType::Required, "fake", "RDISepScale",   false, "vector<float>", "Separation scaling for the planets injected into the RDI images");
       
        /*<<<< fake */
       
@@ -450,6 +454,8 @@ public:
       config(fakeSep,           "fake.sep");
       config(fakePA,            "fake.PA");
       config(fakeContrast,      "fake.contrast");
+      config(m_fakeRDIFluxScale, "fake.RDIFluxScale");
+      config(m_fakeRDISepScale, "fake.RDISepScale");
       /*<<<< fake */
       
       
@@ -581,6 +587,8 @@ public:
       obs->m_fakeSep = fakeSep;
       obs->m_fakePA = fakePA;
       obs->m_fakeContrast = fakeContrast;
+      obs->m_RDIFluxScale = m_fakeRDIFluxScale;
+      obs->m_RDISepScale = m_fakeRDISepScale;
       
       if(coaddMethod != "")
       {

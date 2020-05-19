@@ -705,8 +705,9 @@ int main( int argc,
    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
-   //cubeAzBoxUnsharpMask(imc, 3,15);
-   cubeGaussUnsharpMask(imc, 15.0);
+   cubeGaussSmooth(imc, (float) 2.0);
+   cubeAzBoxUnsharpMask(imc, 1,15);
+   //cubeGaussUnsharpMask(imc, 15.0);
    cubeGaussSmooth(imc, (float) 3.0);
    //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
    
@@ -718,7 +719,7 @@ int main( int argc,
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
    
-   maskCircle( mask, 67, 33, 20, 0.0 );
+   //maskCircle( mask, 67, 33, 20, 0.0 );
    
    eigenCube<float> snrc;
    stddevImageCube( snrc, imc, mask, 10, 50, true); 
