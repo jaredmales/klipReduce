@@ -97,6 +97,9 @@ protected:
    bool preProcess_only;
    bool skipPreProcess;
    
+   //ADI 
+   bool m_postMedSub {false};
+   
    //KLIP parameters
    realT minDPx {0};
    realT maxDPx {0};
@@ -280,6 +283,8 @@ public:
       config.add("adi.maxDPx","", "adi.maxDPx",argType::Required, "adi", "maxDPx", false, "float", "Specify the maximum angle or pixel difference at the inner edge of the search region");
       config.add("adi.excludeMethod","", "adi.excludeMethod",argType::Required, "adi", "excludeMethod", false, "string", "Method for minimum exclusion.  Values are none (default), pixel, angle, imno.");
       config.add("adi.excludeMethodMax","", "adi.excludeMethodMax",argType::Required, "adi", "excludeMethodMax", false, "string", "Method for maximum exclusion.  Values are none (default), pixel, angle, imno.");
+      config.add("adi.postMedSub","", "adi.postMedSub",argType::True, "adi", "postMedSub", false, "string", "If true, the median image is subtracted after post-processing, before de-rotation");
+      
       /*<<<< adi */
       
       /*>>>> geom */
@@ -412,6 +417,8 @@ public:
       config(maxDPx, "adi.maxDPx");
       config(excludeMethod, "adi.excludeMethod");
       config(excludeMethodMax, "adi.excludeMethodMax");
+      config(m_postMedSub, "adi.postMedSub");
+      
       /*<<<< adi */
       
       /*>>>> geom */
@@ -680,6 +687,7 @@ public:
          }
       }
       
+      obs->m_postMedSub = m_postMedSub;
       
       if(m_meanSubMethod != "")
       {
@@ -707,12 +715,15 @@ public:
       }
       
       obs->m_includeRefNum = includeRefNum;
-      if(Nmodes.size() == 0)
+      
+      if(Nmodes.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify number of modes (Nmodes)\n";
          rv = -1;
       }
       else obs->m_Nmodes = Nmodes;
+      
+      
       
       if(minRadius.size() == 0 && mode != "postprocess")
       {

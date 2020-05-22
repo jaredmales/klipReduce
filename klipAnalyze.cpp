@@ -688,9 +688,18 @@ int main( int argc,
    
    eigenCube<float> imc;
    fitsFile<float> ff;
+   fitsHeader fh;
    //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
-   ff.read(imc, argv[1]);
+   ff.read(imc, fh, argv[1]);
    
+   float rad = 0;//std::stof(fh["FAKESEP"].String());
+   float pa = 0;//std::stof(fh["FAKEPA"].String());
+   float cont = 0;//std::stof(fh["FAKECONT"].String());
+   std::cerr << rad << " " << pa << "\n";
+   
+   int pixx = 0.5*(imc.rows()-1) - rad * sin(dtor(pa + 90.)); //std::stoi(argv[2]);
+   int pixy = 0.5*(imc.cols()-1) - rad * cos(dtor(pa+90.));//std::stoi(argv[3]);
+   std::cerr << "Pixels: " << pixx << " " << pixy << "\n";
    //eigenImage<float> im50 = imc.image(9);
    
    for(int ii=0;ii<imc.rows(); ++ii)
@@ -705,10 +714,10 @@ int main( int argc,
    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
-   cubeGaussSmooth(imc, (float) 2.0);
-   cubeAzBoxUnsharpMask(imc, 1,15);
+   //cubeGaussSmooth(imc, (float) 2.0);
+   //cubeAzBoxUnsharpMask(imc, 1.0,15.5);
    //cubeGaussUnsharpMask(imc, 15.0);
-   cubeGaussSmooth(imc, (float) 3.0);
+   cubeGaussSmooth(imc, (float) 4.0);
    //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
    
    ds9Interface ds9;
@@ -718,17 +727,23 @@ int main( int argc,
    eigenImage<float> mask;
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
-   
-   //maskCircle( mask, 67, 33, 20, 0.0 );
+   pixx = 24;
+   pixy = 46;
+   maskCircle( mask, pixx, pixy, 10, 0.0 );
    
    eigenCube<float> snrc;
-   stddevImageCube( snrc, imc, mask, 10, 50, true); 
+   stddevImageCube( snrc, imc, mask, 2, 100, true); 
 
+   float best1sig = 1;
+   
    for(int p=0; p<snrc.planes();++p)
    {
-      std::cout << p << " " << (snrc.image(p)*(-1*(mask-1))).maxCoeff() << '\n';
+      float sig1 = cont/(snrc.image(p)*(-1*(mask-1))).maxCoeff();
+      if(sig1 < best1sig) best1sig = sig1;
+      std::cerr << p << " " << (snrc.image(p)*(-1*(mask-1))).maxCoeff() << '\n';
    }
    
+   std::cout << rad << " " << best1sig << "\n";
    
    ds9(imc,2);
    ds9(mask, 3);
