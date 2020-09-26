@@ -335,9 +335,9 @@ public:
       config.add("grid.centerSep",    "", "grid.centerSep",    argType::Required, "grid", "centerSep",    false, "float" , "The grid center in separation [pixels]" );
       config.add("grid.centerPA",     "", "grid.centerPA",     argType::Required, "grid", "centerPA",     false, "float" , "The grid center in position angle [degrees]" );
       config.add("grid.halfWidthSep", "", "grid.halfWidthSep", argType::Required, "grid", "halfWidthSep", false, "float" , "The half width of the grid in spearation [pixels]" );
-      config.add("grid.dalfWidthPA",  "", "grid.halfWidthPA",  argType::Required, "grid", "halfWidthPA",  false, "float" , "The half width of the grid in PA [degrees]" );
+      config.add("grid.halfWidthPA",  "", "grid.halfWidthPA",  argType::Required, "grid", "halfWidthPA",  false, "float" , "The half width of the grid in PA [degrees]" );
       config.add("grid.deltaSep",     "", "grid.deltaSep",     argType::Required, "grid", "deltaSep",     false, "float" , "The grid step size in separation [pixels]" );
-      config.add("grid.celtaPA",      "", "grid.deltaPA",      argType::Required, "grid", "deltaPA",      false, "float" , "The grid step size in PA [degrees]" );
+      config.add("grid.deltaPA",      "", "grid.deltaPA",      argType::Required, "grid", "deltaPA",      false, "float" , "The grid step size in PA [degrees]" );
       config.add("grid.contrasts",    "", "grid.contrasts",    argType::Required, "grid", "contrasts",    false, "vector<float>" , "The contrast grid [planet:star]." );
       //config.add("","", "",argType::Required, "", ""));
       
@@ -539,7 +539,6 @@ public:
    
    void checkConfig()
    {
-      int rv = 0;
       
       if(doHelp) 
       {
