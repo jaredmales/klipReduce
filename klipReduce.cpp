@@ -345,7 +345,7 @@ public:
 
    virtual void setConfigPathCL()
    {
-      config.get<std::string>(configPathCL, "config");
+      config.get<std::string>(m_configPathCL, "config");
    }
    
    void loadConfig()
@@ -482,10 +482,34 @@ public:
       
       config(mode, "mode");
       
+      //This checks for unused config options, printing the banner only once no matter how many there are.
+      //This will catch both bad options, and options we aren't actually using (debugging).
+      bool unusedPrinted = false;
+      for( auto it = config.m_targets.begin(); it != config.m_targets.end(); ++it )
+      {
+         if(it->second.used == false)
+         {
+            if(!unusedPrinted)
+            {
+               std::cerr<< "****************************************************\n";
+               std::cerr << "WARNING: unrecognized config options:\n";
+               unusedPrinted = true;
+            }
+         
+            std::cerr << "   " << it->second.name;
+            if(config.m_sources) std::cerr << " [" << it->second.sources[0] <<"]\n";
+            else std::cerr << "\n";
+         }
+      }
+         
       if(config.m_unusedConfigs.size() > 0)
       {
-         std::cerr<< "****************************************************\n";
-         std::cerr << "WARNING: unrecognized config options:\n";
+         if(!unusedPrinted)
+         {
+            std::cerr<< "****************************************************\n";
+            std::cerr << "WARNING: unrecognized config options:\n";
+            unusedPrinted = true;
+         }
          
          for( auto it = config.m_unusedConfigs.begin(); it != config.m_unusedConfigs.end(); ++it )
          {
@@ -511,17 +535,23 @@ public:
       fprintf(stderr, "   For usage and full documentation see http://makana.as.arizona.edu/acic/group__klipreduce.html  \n\n");
    }
    
-   int checkConfig()
+   bool m_configError {false};
+   
+   void checkConfig()
    {
       int rv = 0;
       
-      if(doHelp) return -1;
-      
+      if(doHelp) 
+      {
+         m_configError = true;
+         return;
+      }
       
       if(directory == "" && prefix == "" && fileList == "")
       {
          std::cerr << invokedName << ": must specify either directory+prefix or fileList\n\n";
-         return -1;
+         m_configError = true;
+         return;
       }
       else
       {
@@ -541,12 +571,10 @@ public:
          {
             if(m_RDIdirectory != "" && m_RDIprefix != "")
             {
-               std::cerr << "6\n";
                obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension, m_RDIdirectory, m_RDIprefix, m_RDIextension);
             }
             else
             {
-               std::cerr << "3\n";
                obs = new mx::improc::KLIPreduction<realT, mx::improc::ADIDerotator<realT>, evCalcT>(directory, prefix, extension);
             }
          } 
@@ -614,7 +642,7 @@ public:
          else
          {
             std::cerr << invokedName << ": invalid coadd method.\n";
-            rv = -1;
+            m_configError = true;
          }
       }
 
@@ -658,7 +686,7 @@ public:
          else
          {
             std::cerr << invokedName << ": invalid excludeMethod.\n";
-            rv = -1;
+            m_configError = true;
          }
       }
        
@@ -683,7 +711,7 @@ public:
          else
          {
             std::cerr << invokedName << ": invalid excludeMethodMax.\n";
-            rv = -1;
+            m_configError = true;
          }
       }
       
@@ -710,7 +738,7 @@ public:
          else
          {
             std::cerr << invokedName << ": invalid klip.meanSubMethod.\n";
-            rv = -1;
+            m_configError = true;
          }
       }
       
@@ -719,7 +747,7 @@ public:
       if(Nmodes.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify number of modes (Nmodes)\n";
-         rv = -1;
+         m_configError = true;
       }
       else obs->m_Nmodes = Nmodes;
       
@@ -728,13 +756,13 @@ public:
       if(minRadius.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify minimum radii of KLIP regions (minRadius)\n";
-         rv = -1;
+         m_configError = true;
       }
       
       if(maxRadius.size() == 0 && mode != "postprocess")
       {
          std::cerr << invokedName << ": must specify maximum radii of KLIP regions (maxRadius)\n";
-         rv = -1;
+         m_configError = true;
       }
       
       obs->m_doDerotate = !noDerotate;
@@ -760,7 +788,7 @@ public:
          else
          {
             std::cerr << invokedName << ": invalid combine method.\n";
-            rv = -1;
+            m_configError = true;
          }
       }
       
@@ -789,7 +817,7 @@ public:
       
       
       
-      return rv;
+      return;
    }
    
    
@@ -798,7 +826,7 @@ public:
    
    virtual int execute()
    {
-      if(checkConfig() != 0)
+      if(m_configError)
       {
          printUsage();
          return -1;

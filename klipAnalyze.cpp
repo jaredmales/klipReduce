@@ -6,10 +6,12 @@
 
 #include <mx/improc/fitsFile.hpp>
 
+#include <mx/improc/imageUtils.hpp>
 #include <mx/improc/imageFilters.hpp>
 #include <mx/improc/eigenImage.hpp>
 #include <mx/improc/eigenCube.hpp>
 #include <mx/improc/ds9Interface.hpp>
+using namespace mx::improc;
 
 #include <mx/gslInterpolation.hpp>
 #include <mx/ioutils/fileUtils.hpp>
@@ -692,9 +694,9 @@ int main( int argc,
    //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
    ff.read(imc, fh, argv[1]);
    
-   float rad = 0;//std::stof(fh["FAKESEP"].String());
-   float pa = 0;//std::stof(fh["FAKEPA"].String());
-   float cont = 0;//std::stof(fh["FAKECONT"].String());
+   float rad = std::stof(argv[2]);//std::stof(fh["FAKESEP"].String());
+   float pa = 45;//std::stof(fh["FAKEPA"].String());
+   float cont = std::stof(argv[3]);//std::stof(fh["FAKECONT"].String());
    std::cerr << rad << " " << pa << "\n";
    
    int pixx = 0.5*(imc.rows()-1) - rad * sin(dtor(pa + 90.)); //std::stoi(argv[2]);
@@ -702,16 +704,18 @@ int main( int argc,
    std::cerr << "Pixels: " << pixx << " " << pixy << "\n";
    //eigenImage<float> im50 = imc.image(9);
    
-   for(int ii=0;ii<imc.rows(); ++ii)
-   {
-      for(int jj=0; jj<imc.cols(); ++jj)
-      {
-         for(int pp=0;pp<imc.planes(); ++pp)
-         {
-            if( !isnormal(imc.image(pp)(ii,jj)))  imc.image(pp)(ii,jj)=0;
-         }
-      }
-   }
+   zeroNaNCube(imc);
+   
+//    for(int ii=0;ii<imc.rows(); ++ii)
+//    {
+//       for(int jj=0; jj<imc.cols(); ++jj)
+//       {
+//          for(int pp=0;pp<imc.planes(); ++pp)
+//          {
+//             if( !isnormal(imc.image(pp)(ii,jj)))  imc.image(pp)(ii,jj)=0;
+//          }
+//       }
+//    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
    //cubeGaussSmooth(imc, (float) 2.0);
@@ -727,13 +731,15 @@ int main( int argc,
    eigenImage<float> mask;
    mask.resize(imc.rows(), imc.cols());
    mask.setConstant(1.0);
-   pixx = 24;
-   pixy = 46;
+   //pixx = 121;
+   //pixy = 138;
    maskCircle( mask, pixx, pixy, 10, 0.0 );
    
    eigenCube<float> snrc;
    stddevImageCube( snrc, imc, mask, 2, 100, true); 
 
+   zeroNaNCube(snrc);
+   
    float best1sig = 1;
    
    for(int p=0; p<snrc.planes();++p)
