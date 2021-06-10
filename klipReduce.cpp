@@ -3,10 +3,9 @@
 
 
 
-#define MX_APP_DEFAULT_configPathGlobal_env "KLIPREDUCE_GLOBAL_CONFIG"
-#define MX_APP_DEFAULT_configPathLocal "klipReduce.conf"
 
-#include <mx/gnuPlot.hpp>
+
+//#include <mx/gnuPlot.hpp>
 
 #include <mx/app/application.hpp>
 using namespace mx::app;
@@ -151,6 +150,8 @@ protected:
 public:
    klipReduce()
    {
+      m_configPathGlobal_env = "KLIPREDUCE_GLOBAL_CONFIG";
+      m_configPathLocal = "klipReduce.conf";
       m_requireConfigPathLocal = false;
       
       obs = 0;
@@ -956,7 +957,7 @@ int klipReduce<realT, evCalcT>::doGrid()
       }
    }
    
-   mx::improc::fitsFile<realT> ff;
+   mx::fits::fitsFile<realT> ff;
    
    std::string fn;
    fn = "gridSep.fits";

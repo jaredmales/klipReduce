@@ -3,9 +3,9 @@
 TARGET=klipReduce
 #OPTIMIZE=-O3
 
-NEED_XPA=no
-NEED_FFTW=no
-NEED_LEVMAR=no
+NEED_XPA=yes
+NEED_FFTW=yes
+NEED_LEVMAR=yes
 NEED_GSL=yes
 
 include $(MXMAKEFILE)
