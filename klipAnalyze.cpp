@@ -4,16 +4,16 @@
 
 #include <mx/math/geo.hpp>
 
-#include <mx/improc/fitsFile.hpp>
+#include <mx/ioutils/fits/fitsFile.hpp>
+using namespace mx::fits;
 
 #include <mx/improc/imageUtils.hpp>
 #include <mx/improc/imageFilters.hpp>
 #include <mx/improc/eigenImage.hpp>
 #include <mx/improc/eigenCube.hpp>
-#include <mx/improc/ds9Interface.hpp>
 using namespace mx::improc;
 
-#include <mx/gslInterpolation.hpp>
+#include <mx/math/gslInterpolation.hpp>
 #include <mx/ioutils/fileUtils.hpp>
 
 #include <mx/math/fit/fitGaussian.hpp>
@@ -341,9 +341,6 @@ struct klipAnalyze
    std::vector<realT> drs;
    std::vector<realT> dqs;
    
-   
-   mx::improc::ds9Interface ds9;
-   
    klipAnalyze()
    {
       regminr = -1;
@@ -372,7 +369,7 @@ struct klipAnalyze
       
    }
    
-   void processHeader( mx::improc::fitsHeader & head )
+   void processHeader( fitsHeader & head )
    {
       if(pas.size() == 0)
       {
@@ -469,11 +466,11 @@ struct klipAnalyze
       
    void analyzeFilePP(const std::string & fname)
    {
-      mx::improc::fitsFile<float> ff;
+      fitsFile<float> ff;
 
       mx::improc::eigenCube<float> ims, proc;
    
-      mx::improc::fitsHeader head;
+      fitsHeader head;
       head.append("FAKEPA");
       head.append("FAKECONT");
       head.append("FAKESEP");
@@ -560,11 +557,11 @@ struct klipAnalyze
    void analyzeFileNP(const std::string & fname)
    {
       
-      mx::improc::fitsFile<float> ff;
+      fitsFile<float> ff;
 
       mx::improc::eigenCube<float> ims, proc;
    
-      mx::improc::fitsHeader head;
+      fitsHeader head;
       head.append("FAKEPA");
       head.append("FAKECONT");
       head.append("FAKESEP");
@@ -691,17 +688,17 @@ int main( int argc,
    eigenCube<float> imc;
    fitsFile<float> ff;
    fitsHeader fh;
-   //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
+   // //ff.read(imc,"/home/jrmales/tmp/klip/contrast_0.00005/fake_28px_120deg_0000.fits");
    ff.read(imc, fh, argv[1]);
    
-   float rad = std::stof(argv[2]);//std::stof(fh["FAKESEP"].String());
-   float pa = 45;//std::stof(fh["FAKEPA"].String());
-   float cont = std::stof(argv[3]);//std::stof(fh["FAKECONT"].String());
-   std::cerr << rad << " " << pa << "\n";
+   // float rad = std::stof(argv[2]);//std::stof(fh["FAKESEP"].String());
+   // float pa = 45;//std::stof(fh["FAKEPA"].String());
+   // float cont = std::stof(argv[3]);//std::stof(fh["FAKECONT"].String());
+   // std::cerr << rad << " " << pa << "\n";
    
-   int pixx = 0.5*(imc.rows()-1) - rad * sin(dtor(pa + 90.)); //std::stoi(argv[2]);
-   int pixy = 0.5*(imc.cols()-1) - rad * cos(dtor(pa+90.));//std::stoi(argv[3]);
-   std::cerr << "Pixels: " << pixx << " " << pixy << "\n";
+   // int pixx = 0.5*(imc.rows()-1) - rad * sin(dtor(pa + 90.)); //std::stoi(argv[2]);
+   // int pixy = 0.5*(imc.cols()-1) - rad * cos(dtor(pa+90.));//std::stoi(argv[3]);
+   // std::cerr << "Pixels: " << pixx << " " << pixy << "\n";
    //eigenImage<float> im50 = imc.image(9);
    
    zeroNaNCube(imc);
@@ -720,11 +717,11 @@ int main( int argc,
    //cubeGaussUnsharpMask(imc, 10.0);
    //cubeGaussSmooth(imc, (float) 2.0);
    //cubeAzBoxUnsharpMask(imc, 1.0,15.5);
-   //cubeGaussUnsharpMask(imc, 15.0);
-   cubeGaussSmooth(imc, (float) 4.0);
+   //cubeGaussUnsharpMask(imc, 17.5);
+   //cubeGaussSmooth(imc, (float) 3.0);
    //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
    
-   ds9Interface ds9;
+   //ds9Interface ds9;
    
    //ds9Interface ds9(imc, 1);
    
@@ -733,28 +730,30 @@ int main( int argc,
    mask.setConstant(1.0);
    //pixx = 121;
    //pixy = 138;
-   maskCircle( mask, pixx, pixy, 10, 0.0 );
+   maskCircle( mask, 76, 44, 20, 0.0 );
    
    eigenCube<float> snrc;
    stddevImageCube( snrc, imc, mask, 2, 100, true); 
 
    zeroNaNCube(snrc);
-   
+
+   ff.write("snrc.fits", snrc);
+
    float best1sig = 1;
    
    for(int p=0; p<snrc.planes();++p)
    {
-      float sig1 = cont/(snrc.image(p)*(-1*(mask-1))).maxCoeff();
-      if(sig1 < best1sig) best1sig = sig1;
+      // float sig1 = cont/(snrc.image(p)*(-1*(mask-1))).maxCoeff();
+      // if(sig1 < best1sig) best1sig = sig1;
       std::cerr << p << " " << (snrc.image(p)*(-1*(mask-1))).maxCoeff() << '\n';
    }
    
-   std::cout << rad << " " << best1sig << "\n";
+   // std::cout << rad << " " << best1sig << "\n";
    
-   ds9(imc,2);
-   ds9(mask, 3);
+   // ds9(imc,2);
+   // ds9(mask, 3);
 
-   ds9(snrc,1);
+   // ds9(snrc,1);
    
 #if 0
    
@@ -776,7 +775,7 @@ int main( int argc,
    std::vector<std::string> files = mx::getFileNames("/home/jrmales/Data/Magellan/Clio/clio_20141202_03/bpic39/neg2/", "finim", "",".fits");
 
    mx::improc::eigenCube<float> imc;
-   mx::improc::fitsFile<float> ff;
+   fitsFile<float> ff;
    
    //ff.read(imc, files);
    

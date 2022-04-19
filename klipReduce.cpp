@@ -163,7 +163,7 @@ public:
    
       MJDisISO8601 = true;
 
-      angleScale = 0;
+      angleScale = 1;
       angleConstant = 0;
    
       coaddMaxImno = 0;
@@ -995,7 +995,7 @@ int main(int argc, char ** argv)
    {
       kr.main(argc, argv);
    }
-   catch(const mxException & e)
+   catch(const mx::err::mxException & e)
    {
       std::cerr << e.what() << "\n";
       return -1;
