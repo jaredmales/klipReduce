@@ -153,5 +153,5 @@ int gridFile( const std::string & outDir,
       ++it;
    }
    
-   
+   return 0;
 }

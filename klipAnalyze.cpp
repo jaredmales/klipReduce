@@ -138,11 +138,11 @@ typename eigenImageT::Scalar imageGetMaxInMask( const eigenImageT & im,
                                                 eigenMaskT & mask,
                                                 int maskIncludeVal = 1 )
 {
-   typename eigenImageT::Scalar max = 0;
+   typename eigenImageT::Scalar max = std::numeric_limits<typename eigenImageT::Scalar>::lowest();
    
-   for(int i=0; i<im.rows(); ++i)
+   for(int j=0; j<im.cols(); ++j)
    {
-      for(int j=0; j<im.cols(); ++j)
+      for(int i=0; i<im.rows(); ++i)
       {
          if( mask(i,j) != maskIncludeVal ) continue;
          
@@ -323,15 +323,15 @@ std::vector<typeT> convertFromStringVector(const std::string & str)
 template<typename realT>
 struct klipAnalyze
 {
-   std::vector<realT> pas;
-   std::vector<realT> contrasts;
-   std::vector<realT> seps;
-   std::vector<int> nmodes;
-   realT regminr;
-   realT regmaxr;
-   realT qthresh;
-   int inclrefn;
-   realT mindpx;
+   std::vector<realT> m_pas;
+   std::vector<realT> m_contrasts;
+   std::vector<realT> m_seps;
+   std::vector<int> m_nmodes;
+   realT m_regminr {-1};
+   realT m_regmaxr {-1};
+   realT m_qthresh {-1};
+   int m_inclrefn {-1};
+   realT m_mindpx {-1};
    
    realT fixedPA;
    realT fixedSep;
@@ -343,24 +343,19 @@ struct klipAnalyze
    
    klipAnalyze()
    {
-      regminr = -1;
-      regmaxr = -1;
-      qthresh = -1;
-      inclrefn = -1;
-      mindpx = -1;
    }
    
    void initialize()
    {
-      pas.clear();
-      contrasts.clear();
-      seps.clear();
-      nmodes.clear();
-      regminr = -1;
-      regmaxr = -1;
-      qthresh = -1;
-      inclrefn = -1;
-      mindpx = -1;
+      m_pas.clear();
+      m_contrasts.clear();
+      m_seps.clear();
+      m_nmodes.clear();
+      m_regminr = -1;
+      m_regmaxr = -1;
+      m_qthresh = -1;
+      m_inclrefn = -1;
+      m_mindpx = -1;
       
       stds.clear();
       As.clear();
@@ -371,74 +366,72 @@ struct klipAnalyze
    
    void processHeader( fitsHeader & head )
    {
-      if(pas.size() == 0)
+      if(m_pas.size() == 0)
       {
-         pas = convertFromStringVector<realT>(head["FAKEPA"].String());
-         
-         if(pas.size() == 0)
+         m_pas = convertFromStringVector<realT>(head["FAKEPA"].String());
+      
+         if(m_pas.size() == 0)
          {
             std::cerr << "No fake PAs in header!\n";
             exit(-1);
          }
-
-         
       }
-      if(contrasts.size() == 0)
+      if(m_contrasts.size() == 0)
       {
-         contrasts = convertFromStringVector<realT>(head["FAKECONT"].String());
+         m_contrasts = convertFromStringVector<realT>(head["FAKECONT"].String());
          
-         if(contrasts.size() == 0)
+         if(m_contrasts.size() == 0)
          {
             std::cerr << "No fake contrasts in header!\n";
             exit(-1);
          }
       }
-      if(seps.size() == 0)
+      if(m_seps.size() == 0)
       {
-         seps = convertFromStringVector<realT>(head["FAKESEP"].String());
+         m_seps = convertFromStringVector<realT>(head["FAKESEP"].String());
          
-         if(seps.size() == 0)
+         if(m_seps.size() == 0)
          {
             std::cerr << "No fake contrasts in header!\n";
             exit(-1);
          }
 
       }
-      if(nmodes.size() == 0)
+      if(m_nmodes.size() == 0)
       {
-         nmodes = convertFromStringVector<int>(head["NMODES"].String());
+         m_nmodes = convertFromStringVector<int>(head["NMODES"].String());
       }
-      if(regminr == -1)
+      if(m_regminr == -1)
       {
-         regminr = mx::ioutils::convertFromString<realT>(head["REGMINR"].String());
+         m_regminr = mx::ioutils::convertFromString<realT>(head["REGMINR"].String());
       }
-      if(regmaxr == -1)
+      if(m_regmaxr == -1)
       {
-         regmaxr = mx::ioutils::convertFromString<realT>(head["REGMAXR"].String());
+         m_regmaxr = mx::ioutils::convertFromString<realT>(head["REGMAXR"].String());
       }
-      if(qthresh == -1)
+      if(m_qthresh == -1)
       {
-         qthresh = mx::ioutils::convertFromString<realT>(head["QTHRESH"].String());
+         m_qthresh = mx::ioutils::convertFromString<realT>(head["QTHRESH"].String());
       }
-      if(inclrefn == -1)
+      if(m_inclrefn == -1)
       {
-         inclrefn = head["INCLREFN"].Int();
+         m_inclrefn = head["INCLREFN"].Int();
       }
-      if(mindpx == -1)
+      if(m_mindpx == -1)
       {
-         mindpx = head["MINDPX"].Value<realT>();
+         m_mindpx = head["MINDPX"].value<realT>();
       }
    }
    
    void positivePlanet()
    {
-      for(int i=0; i< contrasts.size(); ++i)
+      for(int i=0; i< m_contrasts.size(); ++i)
       {
-         if(contrasts[i] < 0)
+         if(m_contrasts[i] < 0)
          {
-            contrasts.erase( contrasts.begin()+i);
-            pas.erase( pas.begin() + i);
-            seps.erase( seps.begin() + i);
+            m_contrasts.erase( m_contrasts.begin()+i);
+            m_pas.erase( m_pas.begin() + i);
+            m_seps.erase( m_seps.begin() + i);
             --i;
          }
       }
@@ -466,7 +459,10 @@ struct klipAnalyze
       
    void analyzeFilePP(const std::string & fname)
    {
-      fitsFile<float> ff;
+      fitsFile<realT> ff;
+
+      realT maskr = 10;
+      realT smFWHM = 2.0;
 
       mx::improc::eigenCube<float> ims, proc;
    
@@ -484,51 +480,52 @@ struct klipAnalyze
       #pragma omp critical
       ff.read(ims, head, fname);
 
+      //Extract the reduction params
       processHeader(head);
       
+      //Remove any negative planets
       positivePlanet();
 
       
+      //The center of the planet.      
+      realT cenx = 0.5*(ims.cols()-1) - m_seps[0] * sin( dtor(m_pas[0]) );
+      realT ceny = 0.5*(ims.rows()-1) + m_seps[0] * cos( dtor(m_pas[0]) );
       
-      realT cenx = 0.5*(ims.cols()-1) - seps[0] * sin( dtor(pas[0]) );
-      realT ceny = 0.5*(ims.rows()-1) + seps[0] * cos( dtor(pas[0]) );
-      
+      std::cerr << "Found fake planet " << m_seps[0] << " " << m_pas[0] << " " << m_contrasts[0] << " at pixel: " << cenx << " " << ceny << "\n";
 
-      std::vector<realT> x;
+      /*std::vector<realT> x;
       std::vector<realT> y;
       std::vector<realT> A;
       std::vector<realT> fwhm_x;
       std::vector<realT> fwhm_y;
-      std::vector<realT> theta;
+      std::vector<realT> theta;*/
 
 
-      centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
+      //centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
 
      // cubeGaussUnsharpMask(ims, 20.0);
-      cubeGaussSmooth(ims, 6.0);
+      cubeGaussSmooth(ims, smFWHM);
       
             
       mx::improc::eigenImage<float> im, stdIm, mask;
    
       mask.resize(ims.rows(), ims.cols());
       mask.setConstant(1.0);
-            
-      
-      realT maskr = 20;
-      
-      mx::improc::maskCircle(mask, cenx, ceny, maskr);
-            
-      
-      //ds9(mask);
-      
+                  
+      mx::improc::maskCircle(mask, cenx, ceny, maskr, 0.0);
+         
+      ff.write("mask.fits", mask);
+
       mx::improc::eigenCube<float> stdImc;
    
-      mx::improc::stddevImageCube(stdImc, ims, mask, regminr, regmaxr, true);
+      mx::improc::stddevImageCube(stdImc, ims, mask, m_regminr, m_regmaxr, true);
    
-      cubeGetMaxInMask(stds, ims, mask, 0);
-      
+      ff.write("snrc.fits", stdImc);
 
+      cubeGetMaxInMask(stds, stdImc, mask, 0);
+      
+/*
       //process results of fit
       As.resize(A.size());
       drs.resize(x.size());
@@ -550,10 +547,10 @@ struct klipAnalyze
          
          dqs[i] = angleDiff(mq, pas[0]) ;
       }
-      
+      */
    }
    
-   
+   #if 0
    void analyzeFileNP(const std::string & fname)
    {
       
@@ -616,20 +613,42 @@ struct klipAnalyze
       
       cubeGetVarInMask(stds, ims, mask, 0);
    }
+   #endif
    
-   
-   void output(const std::string & fname)
+   void outputPP( bool maxOnly = false,
+                  const std::string & fname = ""
+                )
    {
-            
       #pragma omp critical
-      for(int i=0;i<stds.size(); ++i)
+
+      if(maxOnly)
       {
-         std::cout << fname << " " << seps[0] << " " << pas[0] << " " << contrasts[0] << " " << qthresh << " " << regminr << " " << regmaxr << " ";
-         std::cout << mindpx << " " << inclrefn << " " << nmodes[i] << " " << stds[i] << " ";
-         std::cout << As[i] << " " << drs[i] << " " << dqs[i] << "\n";
+         realT max = std::numeric_limits<realT>::lowest();
+         size_t maxn = 0;
+         for(size_t n = 0; n < stds.size(); ++n) 
+         {
+            if(stds[n] > max)
+            {
+               maxn = n;
+               max = stds[n];
+            }
+         }
+
+         std::cout << fname << " " << m_seps[0] << " " << m_pas[0] << " " << m_contrasts[0] << " " << m_qthresh << " " << m_regminr << " " << m_regmaxr << " ";
+         std::cout << m_mindpx << " " << m_inclrefn << " " << m_nmodes[maxn] << " " << stds[maxn] << "\n";
+      }
+      else
+      {
+         for(int i=0;i<stds.size(); ++i)
+         {
+            std::cout << fname << " " << m_seps[0] << " " << m_pas[0] << " " << m_contrasts[0] << " " << m_qthresh << " " << m_regminr << " " << m_regmaxr << " ";
+            std::cout << m_mindpx << " " << m_inclrefn << " " << m_nmodes[i] << " " << stds[i] << "\n";
+            //std::cout << As[i] << " " << drs[i] << " " << dqs[i] << "\n";
+         }
       }
    }
    
+   #if 0
    void outputNP(const std::string & fname)
    {
             
@@ -644,8 +663,10 @@ struct klipAnalyze
       
       //std::cerr << seps[0] << " " << pas[0] << " " << contrasts[0] << " " <<  stds[i] << "\n";
    }
-   
-   void processFile( const std::string & fname, realT sep = -1, bool parsePA = false )
+   #endif
+
+#if 0
+   void processFileNP( const std::string & fname, realT sep = -1, bool parsePA = false )
    {
       initialize();
 //       if(sep != -1) seps = {sep, sep};
@@ -660,12 +681,13 @@ struct klipAnalyze
       outputNP(basename(fname.c_str()));
    
    }
-   
+   #endif
+
    void processFilePP( const std::string & fname)
    {
       initialize();
       analyzeFilePP(fname);
-      output(basename(fname.c_str()));
+      outputPP(false, basename(fname.c_str()));
    
    }
    
@@ -677,14 +699,16 @@ int main( int argc,
         )
 {
 
-   /*klipAnalyze<float> ka;
-   ka.pas = {120};
-   ka.seps = {46};
-   ka.contrasts = {1e-5};
+   klipAnalyze<float> ka;
+   //ka.pas = {120};
+   //ka.seps = {46};
+   //ka.contrasts = {1e-5};
    
-   ka.analyzeFilePP("/home/jrmales/Downloads/finim0000.fits");
-   ka.output("");*/
+   ka.analyzeFilePP(argv[1]);
+   ka.outputPP(true, "");
    
+   return 0;
+
    eigenCube<float> imc;
    fitsFile<float> ff;
    fitsHeader fh;
@@ -715,7 +739,7 @@ int main( int argc,
 //    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
-   //cubeGaussSmooth(imc, (float) 2.0);
+   cubeGaussSmooth(imc, (float) 1.5);
    //cubeAzBoxUnsharpMask(imc, 1.0,15.5);
    //cubeGaussUnsharpMask(imc, 17.5);
    //cubeGaussSmooth(imc, (float) 3.0);
@@ -730,7 +754,7 @@ int main( int argc,
    mask.setConstant(1.0);
    //pixx = 121;
    //pixy = 138;
-   maskCircle( mask, 76, 44, 20, 0.0 );
+   maskCircle( mask, 57, 32, 5, 0.0 );
    
    eigenCube<float> snrc;
    stddevImageCube( snrc, imc, mask, 2, 100, true); 
