@@ -843,8 +843,9 @@ public:
       }
       else
       {
-         std::vector<realT> minMaxQ(minRadius.size(), 0);
-         return obs->regions(minRadius, maxRadius, minMaxQ, minMaxQ);
+         std::vector<realT> minQ(minRadius.size(), 0);
+         std::vector<realT> maxQ(minRadius.size(), 360);
+         return obs->regions(minRadius, maxRadius, minQ, maxQ);
       }
       
    }
@@ -935,7 +936,7 @@ int klipReduce<realT, evCalcT>::doGrid()
          
          sep(i,j) = sqrt( pow(x,2) + pow(y,2) );
          
-         pa(i,j) = mx::math::angleMod(mx::math::rtod( atan2(y, x))  - 90.0);
+         pa(i,j) = mx::math::angleMod<mx::math::degreesT<realT>>(mx::math::rtod( atan2(y, x))  - 90.0);
          
          //std::cerr << sep(i,j) << " " << pa(i,j) << "\n";
          

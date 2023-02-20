@@ -461,8 +461,8 @@ struct klipAnalyze
    {
       fitsFile<realT> ff;
 
-      realT maskr = 10;
-      realT smFWHM = 2.0;
+      realT maskr = 15;
+      realT smFWHM = 3.5;
 
       mx::improc::eigenCube<float> ims, proc;
    
@@ -504,7 +504,7 @@ struct klipAnalyze
       //centroidImageCube( x, y, A, fwhm_x, fwhm_y, theta, ims, cenx, ceny);
    
 
-     // cubeGaussUnsharpMask(ims, 20.0);
+      cubeGaussUnsharpMask(ims, 10.0);
       cubeGaussSmooth(ims, smFWHM);
       
             
