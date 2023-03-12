@@ -936,7 +936,9 @@ int klipReduce<realT, evCalcT>::doGrid()
          
          sep(i,j) = sqrt( pow(x,2) + pow(y,2) );
          
-         pa(i,j) = mx::math::angleMod<mx::math::degreesT<realT>>(mx::math::rtod( atan2(y, x))  - 90.0);
+         std::cerr << "THIS WON'T WORK UNTIL YOU FIX ANGLEMOD\n";
+         exit(0);
+         //pa(i,j) = mx::math::angleMod<mx::math::degreesT<realT>>(mx::math::rtod( atan2(y, x))  - 90.0);
          
          //std::cerr << sep(i,j) << " " << pa(i,j) << "\n";
          
