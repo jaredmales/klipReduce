@@ -91,6 +91,7 @@ protected:
    bool preProcess_subradprof;
    realT preProcess_azUSM_azW;
    realT preProcess_azUSM_radW;
+   int preProcess_medianUSM_fwhm;
    realT preProcess_gaussUSM_fwhm;
    std::string preProcess_outputPrefix;
    bool preProcess_only;
@@ -174,6 +175,7 @@ public:
       preProcess_subradprof = 0;
       preProcess_azUSM_azW = 0;
       preProcess_azUSM_radW = 0;
+      preProcess_medianUSM_fwhm = 0;
       preProcess_gaussUSM_fwhm = 0;
       preProcess_only = false;
       skipPreProcess = false;
@@ -272,6 +274,7 @@ public:
       config.add("preProcess.azUSM_azW","",     "preProcess.azUSM_azW", argType::Required,     "preProcess", "azUSM_azW", false, "float", "The azimuth USM boxcar azimuthal width in pixels.  Enabled if both azW and radW are non-zero.");
       config.add("preProcess.azUSM_radW","",    "preProcess.azUSM_radW", argType::Required,    "preProcess", "azUSM_radW", false, "float", "The azimuth USM boxcar radial width in pixels.  Enabled if both azW and radW are non-zero.");
       config.add("preProcess.gaussUSM_fwhm","", "preProcess.gaussUSM_fwhm", argType::Required, "preProcess", "gaussUSM_fwhm", false, "float", "The gaussian USM kernel full-width at half max.  Enabled if non-zero.");
+      config.add("preProcess.medianUSM_fwhm","", "preProcess.medianUSM_fwhm", argType::Required, "preProcess", "medianUSM_fwhm", false, "float", "The median USM kernel full-width at half max.  Enabled if non-zero.");
       config.add("preProcess.outputPrefix","",  "preProcess.outputPrefix", argType::Required,  "preProcess", "outputPrefix", false, "string", "If not empty, then this prefix (which should be a full path) is added to file names and the pre-processed images are output");
       config.add("preProcess.only","",          "preProcess.only", argType::True,              "preProcess", "only", false, "bool", "If true, stop after pre-processing.  Default is false.");
       config.add("preProcess.skip","",          "preProcess.skip", argType::True,              "preProcess", "skip", false, "bool", "If true, then pre-processing is skipped.  Default is false.");
@@ -407,6 +410,7 @@ public:
       config(preProcess_subradprof, "preProcess.subradprof");
       config(preProcess_azUSM_azW, "preProcess.azUSM_azW");
       config(preProcess_azUSM_radW, "preProcess.azUSM_radW");
+      config(preProcess_medianUSM_fwhm, "preProcess.medianUSM_fwhm");
       config(preProcess_gaussUSM_fwhm, "preProcess.gaussUSM_fwhm");
       config(preProcess_outputPrefix, "preProcess.outputPrefix");
       config(preProcess_only, "preProcess.only");
@@ -657,6 +661,7 @@ public:
       obs->m_preProcess_subradprof = preProcess_subradprof;
       obs->m_preProcess_azUSM_azW = preProcess_azUSM_azW;
       obs->m_preProcess_azUSM_radW = preProcess_azUSM_radW;
+      obs->m_preProcess_medianUSM_fwhm = preProcess_medianUSM_fwhm;
       obs->m_preProcess_gaussUSM_fwhm = preProcess_gaussUSM_fwhm;
       obs->m_preProcess_outputPrefix = preProcess_outputPrefix;      
       obs->m_preProcess_only = preProcess_only;
@@ -992,7 +997,7 @@ int main(int argc, char ** argv)
 #endif 
    
    
-   klipReduce<float, float> kr;
+   klipReduce<float, double> kr;
    
    try
    {

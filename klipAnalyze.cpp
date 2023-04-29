@@ -704,10 +704,10 @@ int main( int argc,
    //ka.seps = {46};
    //ka.contrasts = {1e-5};
    
-   ka.analyzeFilePP(argv[1]);
+  /* ka.analyzeFilePP(argv[1]);
    ka.outputPP(true, "");
    
-   return 0;
+   return 0;*/
 
    eigenCube<float> imc;
    fitsFile<float> ff;
@@ -739,12 +739,17 @@ int main( int argc,
 //    }
    
    //cubeGaussUnsharpMask(imc, 10.0);
-   cubeGaussSmooth(imc, (float) 1.5);
-   //cubeAzBoxUnsharpMask(imc, 1.0,15.5);
+   //cubeGaussSmooth(imc, (float) 1.5);
+
+   cubeAzBoxUnsharpMask(imc, 3.0,15);
+
    //cubeGaussUnsharpMask(imc, 17.5);
-   //cubeGaussSmooth(imc, (float) 3.0);
-   //cubeAzBoxSmooth(imc, (float) 4, (float) 2);
+   cubeGaussSmooth(imc, (float) 2.5);
+   //cubeAzBoxSmooth(imc, (float) 1.5, (float) 2.75);
    
+   //ff.write(mx::ioutils::pathStem(argv[1]) + "_azusm.fits", imc);
+
+   //return 0;
    //ds9Interface ds9;
    
    //ds9Interface ds9(imc, 1);
@@ -754,10 +759,18 @@ int main( int argc,
    mask.setConstant(1.0);
    //pixx = 121;
    //pixy = 138;
-   maskCircle( mask, 57, 32, 5, 0.0 );
+
+   //beta pic b:
+   //maskCircle( mask, 74, 200, 10, 0.0 );
+   //maskCircle( mask, 170, 45, 10, 0.0 );
+
+   maskCircle( mask, 81, 40, 10, 0.0 );
    
+   ff.write("mask.fits", mask);
    eigenCube<float> snrc;
-   stddevImageCube( snrc, imc, mask, 2, 100, true); 
+
+   //stddevImageCube( snrc, imc, mask, 60, 120, true);
+   stddevImageCube( snrc, imc, mask, 12, 60, true);
 
    zeroNaNCube(snrc);
 
