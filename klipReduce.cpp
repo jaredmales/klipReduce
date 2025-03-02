@@ -1671,9 +1671,9 @@ int main( int argc, char **argv )
     {
         kr.main( argc, argv );
     }
-    catch( const mx::err::mxException &e )
+    catch( const std::exception &e )
     {
-        std::cerr << e.what() << "\n";
+        std::cerr << argv[0] << " exception caught:\n  " << e.what() << "\n";
         return -1;
     }
 
