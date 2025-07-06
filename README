@@ -1,2 +1,4 @@
 A program to run the mxlib KLIP pipeline from the command line.
 
+NOTE: this repo is no longer maintained.  To build it you will need the `klipReduce` branch of mxlib, which is in turn no longer maintained.  The KLIP functionality is now maintained in the PLIPreduce repo.
+
